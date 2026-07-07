@@ -1,0 +1,77 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, urlcolor=blue, linkcolor=black}
+\usepackage{enumitem}
+
+\title{\textbf{Trabajo Práctico N° 2}}
+\author{}
+\date{}
+
+\begin{document}
+
+\begin{center}
+    {\large INSTITUTO TECNOLÓGICO DE BUENOS AIRES}\\[0.5em]
+    {\Large \textbf{Trabajo Práctico N° 2}}\\[1em]
+    Alumno: Cozzi, Alejandro Luis (Leg. Nº 27826374)\\
+    Profesor: Salgado, Ariel\\
+    TALLER: (20261Q) CD.11 -- Comisión: ECD.2025.B\\
+    Introducción a la Metodología de Investigación -- Maestría en Ciencia de Datos
+\end{center}
+
+\vspace{1em}
+
+\begin{enumerate}
+    \item Seleccione al menos 5 referencias bibliográficas, artículos científicos, congresos o revistas que aborden el tema seleccionado y sus alrededores.
+
+    \item Describir un breve Estado de la cuestión del problema a ser abordado a partir de las referencias de bibliografía y otras fuentes de información seleccionadas. Indique claramente cuál es el problema a ser abordado. El texto debe desprenderse de la bibliografía explorada y evidenciar cómo el problema se vincula con la literatura (en términos de problemas similares, metodologías empleadas, conceptos relevantes) pero a la vez se distingue de la misma (en términos de las características de la pregunta de investigación, la metodología empleada, los datos empleados u otra opción que corresponda).
+
+    \item Definir el problema de investigación a abordar, recontextualizado en el Estado de la cuestión construido en el punto 2.
+\end{enumerate}
+
+\section*{Estado de la cuestión}
+
+Mejorar los niveles de detección de ataques en WAF\footnote{Web Application Firewall (WAF) es el software que se utiliza como cortafuegos entre un proveedor de un servicio (ejemplo un sitio web) y un usuario remoto.} a partir de los datos, es un problema constante y recurrente dado que la cantidad y creatividad de los ataques se sostiene en el tiempo. Las dinámicas elementales desde el punto de vista técnico para quienes no estén familiarizados con el problema de la seguridad y la acción del WAF son trabajadas en [\ref{ref1}] donde se realiza una exploración metodológica acerca de la arquitectura necesaria para detectar y bloquear amenazas de tipo SQLI\footnote{Inyección de SQL (SQLI) es un tipo de ataque informático en el cual se intenta manipular la base de datos que sostiene un servicio web.}; si bien menciona los aportes que podrían hacer las técnicas de \textit{deep learning} en esa capa, no incluye ninguna en su propuesta. Sí aporta algunas nociones metodológicas que podrían ayudar en la etapa de experimentación y, sobre todo, al momento de comparar con los filtros heurísticos.
+
+En cambio [\ref{ref2}] realiza una aproximación muy similar a la que pretende plantear este trabajo, aunque sobre presupuestos metodológicos diferentes. Si bien parte de arquitecturas \textit{transformers} para la comprensión semántica de cada solicitud web, apunta al \textit{fine-tuning} a partir de RoBERTa\footnote{Modelo de tipo Transformers, variante de BERT (Bidirectional Encoder Representations from Transformers)}, antes que a la extracción de \textit{embeddings} crudos para su posterior procesamiento. No buscan generalizar sobre un conjunto de solicitudes maliciosas \textit{per se}, sino que proponen realizar un entrenamiento de modelos singulares para cada aplicación web.
+
+Es probable que el entrenamiento singular tenga mucho sentido a la hora de detectar anomalías, aunque no queda del todo claro en ese trabajo cómo se realizaría el etiquetado ya que en los experimentos se utilizan datasets ya etiquetados como CSIC 2010 y DRUPAL.
+
+En una segunda etapa, luego del \textit{fine-tuning} de RoBERTa, utilizan OneClassSVM un clasificador binario para detectar los ataques en los datasets, y lo comparan con los resultados TPR y FPR\footnote{Por True Positive Ratio y False Positive Ratio} usando ModSec\footnote{\href{https://en.wikipedia.org/wiki/ModSecurity}{Mod Security} es un WAF de código abierto, desarrollado por OWASP (Open Worldwide Application Security Project)} como WAF.
+
+La potencia de RoBERTa también fue utilizada en [\ref{ref3}] donde los autores experimentaron con un ensamble bastante más complejo pero con algunos parámetros similares. Su trabajo también utiliza herramientas \textit{transformers}, RoBERTa en particular y el dataset de CSIC 2010 para pruebas, además del dataset ATRDF 2023. Su propuesta se inspira en el framework GAN\footnote{\href{https://en.wikipedia.org/wiki/Generative_adversarial_network}{Red Generativa Adversaria}} de forma muy original: identifican tokens reservados en el dataset original y los enmascaran con un token de máscara (literalmente \texttt{<MASK>}), luego utilizan RoBERTa para generar el reemplazo esperable de esa fracción del código, lo cual entrega un dataset paralelo, distinto del original. A continuación utilizan nuevamente RoBERTa para comparar ambos, y calculan la similaridad del coseno de cada palabra para determinar anomalías. Por último, entrenan un clasificador de \textit{Random Forest} para predecir y discriminar entre `tráfico normal' y `posible ataque'.
+
+Otra característica en común de los dos trabajos mencionados anteriormente es que ambos obtienen como resultado esa clasificación binaria.
+
+En cambio en [\ref{ref4}] los autores apuntan a entregar ambos tipos de clasificación, una binaria (que discrimine ataque / legítimo) y una multiclase, clasificando hasta 8 clases en total (incluyendo al tráfico legítimo). Partiendo de la extracción de \textit{embeddings} de la solicitud http, proceden a añadirle ruido usando el algoritmo Da-Sana.
+
+Para construir los embeddings utilizaron Keras con un \textit{padding} posterior para normalizar los largos (es decir recortando las líneas que exceden el largo determinado y completando con ceros las que no llegan a él) usando los datasets CSIC-2010 y ECML/PKDD.
+
+Un desarrollo más amplio y complejo se encuentra en [\ref{ref5}]. En este trabajo se presenta un proceso que acuña su propio nombre: DeepPTSD una sigla que describe básicamente el proceso propuesto, de \textit{Deep Learning Payload Traffic Detection Method Transfer Semi-Supervised Detection}. Se trata de un ensamble bastante sofisticado que se entrena con datasets clasificados públicos y aspira a detectar líneas maliciosas en un WAF. A grandes rasgos el ensemble sigue un proceso similar a los demás, aunque con variantes en cada paso, por ejemplo los embeddings se extraen con \textit{Word2Vec} luego se pre-entrena un modelo con esa información usando redes convolucionales. Con los resultados se realiza una aumentación de los datos que sigue dos caminos: ``keyword mining'' que parte de un dataset de payloads\footnote{Payload (carga útil) es el conjunto de parámetros que acompaña una solicitud web como puede ser datos de un formulario, encabezados, tokens de autenticación, etc.} y aplica una ecuación tf-idf para crear una biblioteca de payloads y luego una ``payload perturbation'' que reemplaza ciertos tokens que detecta similares a los de la biblioteca en la línea a analizar.
+
+\section*{Problema}
+
+Los trabajos mencionados parecen coincidir en un problema central: las reglas de WAF son eficientes para detectar un alto porcentaje de solicitudes maliciosas, pero son incapaces de detectar algunos tipos de ofuscación. Además, por su propia naturaleza, surgen como reacción a la detección de vulnerabilidades de tipo `zero-day' y esa reacción abre una ventana de oportunidad para el ciberdelito.
+
+Es por eso que se busca en todos una solución al problema a partir de los datos, con distintas estrategias que en definitiva resultan en una acción inmediata sobre una solicitud web, en la capa de WAF. Esta solución no implica un reemplazo del sistema de reglas tradicional, sino un complemento que mejore las métricas de detección. En cualquier caso, eso significa básicamente aumentar el TPR y reducir el FPR con distintas estrategias específicas de la ciencia de datos, en un margen de tiempo poco considerable\footnote{Si bien no hay un tiempo estándar de procesamiento para evaluar una respuesta, lo habitual es que un sitio responda en aproximadamente 2 segundos.}.
+
+\section*{Bibliografía}
+
+\begin{enumerate}
+    \item \label{ref1} Hassan, A. F. (2026). IMPROVING WEB APPLICATION SECURITY VIA FIREWALL-BASED DETECTION AND PREVENTION OF SQL INJECTION ATTACKS. \textit{Journal of Digital Security and Forensics}, 3(1), 67-74. \url{https://doi.org/10.29121/digisecforensics.v3.i1.2026.104}
+
+    \item \label{ref2} Montes, N., Betarte, G., Martínez, R., \& Pardo, A. (2021, May). Web application attacks detection using deep learning. In \textit{Iberoamerican Congress on Pattern Recognition} (pp. 227-236). Cham: Springer International Publishing. \url{https://link.springer.com/chapter/10.1007/978-3-030-93420-0_22}
+
+    \item \label{ref3} Aharon, U., Marbel, R., Dubin, R., Dvir, A., \& Hajaj, C. (2024). RoBERTa-Augmented Synthesis for Detecting Malicious API Requests. \textit{arXiv preprint arXiv:2405.11258}. \url{https://arxiv.org/abs/2405.11258}
+
+    \item \label{ref4} Karacan, H., \& Sevri, M. (2021). A novel data augmentation technique and deep learning model for web application security. \textit{IEEE Access}, 9, 150781-150797. \url{https://www.academia.edu/108290354/A_Novel_Data_Augmentation_Technique_and_Deep_Learning_Model_for_Web_Application_Security}
+
+    \item \label{ref5} Chen, T., Chen, Y., Lv, M., He, G., Zhu, T., Wang, T., \& Weng, Z. (2021). A Payload Based Malicious HTTP Traffic Detection Method Using Transfer Semi-Supervised Learning. \textit{Applied Sciences}, 11(16), 7188. \url{https://doi.org/10.3390/app11167188}
+\end{enumerate}
+
+\end{document}
