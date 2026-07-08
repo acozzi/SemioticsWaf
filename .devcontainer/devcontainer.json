@@ -1,0 +1,19 @@
+{
+  "name": "LaTeX Fedora",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "James-Yu.latex-workshop"
+      ],
+      "settings": {
+        "latex-workshop.latex.recipe.default": "latexmk",
+        "latex-workshop.view.pdf.viewer": "tab"
+      }
+    }
+  },
+  "postCreateCommand": "latexmk -v",
+  "remoteUser": "root"
+}
