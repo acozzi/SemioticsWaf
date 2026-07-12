@@ -14,7 +14,7 @@ device="cuda" if torch.cuda.is_available() else "cpu"
 tokenizer=AutoTokenizer.from_pretrained(MODEL)
 model=AutoModel.from_pretrained(MODEL).to(device)
 
-df=pd.read_csv("logs.csv")
+df=pd.read_csv("logs_clean.csv")
 
 embeddings=[]
 
