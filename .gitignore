@@ -40,3 +40,6 @@ Thumbs.db
 # Archivos de datos
 *.csv
 *.parquet
+*.npy
+
+*.pkl
