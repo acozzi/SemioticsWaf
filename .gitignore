@@ -36,3 +36,10 @@
 # Archivos del sistema operativo
 .DS_Store
 Thumbs.db
+
+# Archivos de datos
+*.csv
+*.parquet
+*.npy
+
+*.pkl
