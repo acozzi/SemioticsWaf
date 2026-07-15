@@ -1,89 +1,146 @@
-\documentclass[12pt,a4paper]{article}
+\documentclass[12pt]{article}
 
-% Paquetes básicos
+% ===== Márgenes (replican w:pgMar: top/bottom 1440 twips, left/right 1080 twips) =====
+\usepackage[a4paper, top=2.54cm, bottom=2.54cm, left=1.9cm, right=1.9cm]{geometry}
+
+% ===== Fuente Arial en todo el documento (w:rFonts w:ascii="Arial") =====
+\usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-% \usepackage[spanish]{babel}
-\usepackage{geometry}
-\geometry{a4paper, margin=2.54cm} % Márgenes estilo APA
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
 
-\usepackage{fontspec}
-\setmainfont{Arial}
-% \usepackage{helvet}
-% \renewcommand{\familydefault}{\sfdefault}
-\usepackage{titlesec}
+% ===== Idioma (w:lang w:val="es-AR") =====
+\usepackage[spanish,es-noindentfirst]{babel}
+
+% ===== Borde doble de página (w:pgBorders val="double") en portada =====
+\usepackage{eso-pic}
+\usepackage{tikz}
+\newcommand{\pageborder}{%
+  \AddToShipoutPictureBG*{%
+    \begin{tikzpicture}[remember picture, overlay]
+      \draw[double, double distance=1.2pt, line width=0.4pt]
+        ([xshift=1cm,yshift=1cm]current page.south west) rectangle
+        ([xshift=-1cm,yshift=-1cm]current page.north east);
+    \end{tikzpicture}%
+  }%
+}
+
+% Borde simple (una línea) para el resto de las páginas, a partir del salto de sección
+\newcommand{\pageborderSimple}{%
+  \AddToShipoutPictureBG{%
+    \begin{tikzpicture}[remember picture, overlay]
+      \draw[line width=0.6pt]
+        ([xshift=1cm,yshift=1cm]current page.south west) rectangle
+        ([xshift=-1cm,yshift=-1cm]current page.north east);
+    \end{tikzpicture}%
+  }%
+}
+
+\usepackage{setspace}
+\usepackage{lipsum} % placeholders lorem ipsum
+\usepackage{hyperref}
+\hypersetup{hidelinks}
 
 \begin{document}
 
-% --- PORTADA ---
+% ================= PORTADA =================
+% Alineación tomada literalmente del XML: solo Título, Subtítulo,
+% BUENOS AIRES y SEGUNDO CUATRIMESTRE tienen jc="center"; el resto
+% (ITBA, Alumno, Profesor, Taller) queda con la alineación por defecto (izquierda).
+\pageborder % marco doble -> solo esta página (single-shot con \AddToShipoutPictureBG*)
 \begin{titlepage}
-    \centering
-    \vspace*{2cm}
-    
-    {\Large \textbf{INSTITUTO TECNOLÓGICO DE BUENOS AIRES}}\\[2cm]
-    
-    {\Huge \textbf{TÍTULO DEL PROYECTO}}\\[0.5cm]
-    {\LARGE \textit{SUBTÍTULO DEL PROYECTO}}\\[3cm]
-    
-    \begin{flushleft}
-        {\large \textbf{Alumno:} Cozzi, Alejandro Luis (Leg. N° 27826374)}\\[0.5cm]
-        {\large \textbf{Profesor:} Salgado, Ariel}\\[0.5cm]
-        {\large \textbf{Taller:} Introducción a la Metodología de Investigación – Maestría en Ciencia de Datos}
-    \end{flushleft}
-    
+    \vspace*{0.5cm}
+    {\large INSTITUTO TECNOLÓGICO DE BUENOS AIRES}
+
+    \begin{center}
+    \vspace{2cm}
+    {\Huge \bfseries TÍTULO DEL PROYECTO}
+
+    \vspace{1.2cm}
+    {\Huge \bfseries SUBTÍTULO DEL PROYECTO}
+    \end{center}
+
     \vfill
-    
-    {\large \textbf{BUENOS AIRES}}\\[0.5cm]
-    {\large \textbf{SEGUNDO CUATRIMESTRE, 2026}}
+
+    {\large Alumno: Cozzi, Alejandro Luis (Leg.\ N\textdegree\ 27826374)}
+
+    \vspace{1.5cm}
+    {\large PROFESOR: Salgado, Ariel}
+
+    \vspace{0.8cm}
+    {\large TALLER: Introducción a la Metodología de Investigación -- Maestría en Ciencia de Datos}
+
+    \begin{center}
+    \vspace{1.2cm}
+    {\large BUENOS AIRES}
+
+    {\large SEGUNDO CUATRIMESTRE, 2026}
+    \end{center}
 \end{titlepage}
 
-% --- ÍNDICE ---
-\tableofcontents
-\newpage
+% ================= SALTO DE SECCIÓN: a partir de acá, marco de una sola línea =================
+\pageborderSimple
+\pagestyle{plain}
 
-% --- CUERPO DEL DOCUMENTO ---
+% "Introducción" era un párrafo suelto sin estilo -> \section
+% Ítems w:ilvl=0 -> \section (hermanos de Introducción); ítems w:ilvl=1 -> \subsection
 
 \section{Introducción}
-% Escribe aquí el contenido de la introducción...
 
-\section{Contexto}
-% Escribe aquí el contexto...
+\subsection{Contexto}
+\lipsum[1]
 
-\section{Justificación del estudio}
-% Escribe aquí la justificación...
+\subsection{Justificación del estudio}
+\lipsum[2]
 
-\section{Alcances del trabajo y limitaciones}
-% Escribe aquí los alcances y limitaciones...
+\subsection{Alcances del trabajo y limitaciones}
+\lipsum[3]
 
 \section{Estado de la cuestión}
-% Escribe aquí el estado de la cuestión...
+\lipsum[4-5]
 
 \section{Definición del problema}
-% Escribe aquí la definición del problema...
+\lipsum[6]
 
 \section{Hipótesis}
-% Escribe aquí las hipótesis...
+\lipsum[7]
 
 \section{Objetivos}
 
 \subsection{Objetivo General}
-% Escribe aquí el objetivo general...
+\lipsum[8]
 
 \subsection{Objetivos Específicos}
-% Escribe aquí los objetivos específicos...
+\lipsum[9]
 
 \section{Solución Propuesta}
-% Escribe aquí la solución propuesta...
+\lipsum[10-11]
 
 \section{Metodología}
-% Escribe aquí la metodología...
+\lipsum[12]
 
-\section{Técnicas / Herramientas}
-% Escribe aquí las técnicas y herramientas...
+\subsection{Técnicas / Herramientas}
+\lipsum[13]
 
+% ================= REFERENCIAS-BIBLIOGRAFÍA =================
+% Ejemplo con thebibliography (no requiere .bib externo, sirve para arrancar).
+% Si preferís gestionar citas con BibTeX/biblatex te paso esa variante también.
 \section{Referencias-Bibliografía}
-% Aquí puedes listar tus referencias manualmente o usar BibTeX.
-% Si usas BibTeX, reemplaza esta sección por:
-% \bibliographystyle{plain}
-% \bibliography{tu_archivo_de_referencias}
+
+Ejemplo de cómo citar una fuente en el cuerpo del texto: \cite{apellidoAnio}.
+
+\begin{thebibliography}{99}
+
+\bibitem{apellidoAnio}
+Apellido, N. (Año).
+\textit{Título del libro o artículo en cursiva}.
+Editorial o Revista, Volumen(Número), páginas.
+
+\bibitem{ejemploOnline}
+Apellido, N. (Año).
+\textit{Título del recurso}.
+Recuperado de \url{https://www.ejemplo.com}
+
+\end{thebibliography}
 
 \end{document}
