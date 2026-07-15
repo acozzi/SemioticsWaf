@@ -39,6 +39,7 @@
 \usepackage{lipsum} % placeholders lorem ipsum
 \usepackage{hyperref}
 \usepackage{graphicx}
+\usepackage{csquotes}
 \hypersetup{hidelinks}
 
 \begin{document}
@@ -96,38 +97,86 @@
 \lipsum[3]
 
 \section{Estado de la cuestión}
-\lipsum[4-5]
+Mejorar los niveles de detección de ataques en WAF a partir de los datos, es un problema constante y recurrente dado que la cantidad y creatividad de los ataques se sostiene en el tiempo. Las dinámicas elementales desde el punto de vista técnico para quienes no estén familiarizados con el problema de la seguridad y la acción del WAF son trabajadas en \cite{hassan2026improving} donde se realiza una exploración metodológica acerca de la arquitectura necesaria para detectar y bloquear amenazas de tipo SQLI; si bien menciona los aportes que podrían hacer las técnicas de deep learning en esa capa, no incluye ninguna en su propuesta. Sí aporta algunas nociones metodológicas que podrían ayudar en la etapa de experimentación y, sobre todo, al momento de comparar con los filtros heurísticos.
+En cambio \cite{montes2021web} realiza una aproximación muy similar a la que pretende plantear  este trabajo, aunque sobre presupuestos metodológicos diferentes. Si bien parte de arquitecturas transformers para la comprensión semántica de cada solicitud web, apunta al fine-tuning a partir de RoBERTa, antes que a la extracción de embeddings crudos para su posterior procesamiento. No buscan generalizar sobre un conjunto de solicitudes maliciosas per se, sino que proponen realizar un entrenamiento de modelos singulares para cada aplicación web.
+Es probable que el entrenamiento singular tenga mucho sentido a la hora de detectar anomalías, aunque no queda del todo claro en ese trabajo cómo se realizaría el etiquetado ya que en los experimentos se utilizan datasets ya etiquetados como CSIC 2010 y DRUPAL.
+En una segunda etapa, luego del fine-tuning de RoBERTa, utilizan OneClassSVM un clasificador binario para detectar los ataques en los datasets, y lo comparan con los resultados TPR y FPR usando ModSec como WAF.
+La potencia de RoBERTa también fue utilizada en \cite{aharon2024roberta} donde los autores experimentaron con un ensamble bastante más complejo pero con algunos parámetros similares. Su trabajo también utiliza herramientas transformers,  RoBERTa en particular y el dataset de CSIC 2010 para pruebas, además del dataset ATRDF 2023. Su propuesta se inspira en el framework GAN de forma muy original: identifican tokens reservados en el dataset original y los enmascaran con un token de máscara (literalment <MASK>), luego utilizan RoBERTa para generar el reemplazo esperable de esa fracción del código, lo cual entrega un dataset paralelo, distinto del original. A continuación utilizan nuevamente RoBERTa para comparar ambos, y calculan la similaridad del coseno de cada palabra para determinar anomalías. Por último, entrenan un clasificador de Random Forest para predecir y discriminar entre 'tráfico normal' y 'posible ataque'.
+Otra característica en común de los dos trabajos mencionados anteriormente es que ambos obtienen como resultado esa clasificación binaria.
+En cambio en \cite{karacan2021novel} los autores apuntan a entregar ambos tipos de clasificación, una binaria (que discrimine ataque / legítimo) y una multiclase, clasificando hasta 8 clases en total (incluyendo al tráfico legítimo). Partiendo de la extracción de embeddings de la solicitud http, proceden a añadirle ruido usando el algoritmo Da-Sana.
+Para construir los embeddings utilizaron Keras con un padding posterior para normalizar los largos (es decir recortando las líneas que exceden el largo determinado y completando con ceros las que no llegan a él) usando los datasets CSIC-2010 y ECML/PKDD.
+Un desarrollo más amplio y complejo se encuentra en \cite{chen2021payload}. En este trabajo se presenta un proceso que acuña su propio nombre: DeepPTSD una sigla que describe básicamente el proceso propuesto, de Deep Learning Payload Traffic Detection Method Transfer Semi-Supervised Detection. Se trata de un ensamble bastante sofisticado que se entrena con datasets clasificados públicos y aspira a detectar líneas maliciosas en un WAF. A grandes rasgos el ensemble sigue un proceso similar a los demás, aunque con variantes en cada paso, por ejemplo los embeddings se extraen con Word2Vec luego se pre-entrena un modelo con esa información usando redes convolucionales. Con los resultados se realiza una aumentación de los datos que sigue dos caminos: 'keyword mining' que parte de un dataset de payloads y aplica una ecuación tf–idf para crear una biblioteca de payloads y luego una 'payload perturbation' que reemplaza ciertos tokens que detecta similares a los de la biblioteca en la línea a analizar.
+
 
 \section{Definición del problema}
-\lipsum[6]
+Los trabajos mencionados parecen coincidir en un problema central: las reglas de WAF son eficientes para detectar un alto porcentaje de solicitudes maliciosas, pero son incapaces de detectar algunos tipos de ofuscación. Además, por su propia naturaleza, surgen como reacción a la detección de vulnerabilidades de tipo 'zero-day' y esa reacción abre una ventana de oportunidad para el ciberdelito.
+Es por eso que se busca en todos una solución al problema a partir de los datos, con distintas estrategias que en definitiva resultan en una acción inmediata sobre una solicitud web, en la capa de WAF. Esta solución no implica un reemplazo del sistema de reglas tradicional, sino un complemento que mejore las métricas de detección. En cualquier caso, eso significa básicamente aumentar el TPR y reducir el FPR con distintas estrategias específicas de la ciencia de datos, en un margen de tiempo poco considerable.
+
 
 \section{Hipótesis}
-\lipsum[7]
+A partir de un conjunto de líneas de log de WAF con tráfico web, etiquetados con una clasificación de ciberseguridad (normal o malicioso) es posible generar nuevas etiquetas para líneas desconocidas, sin necesidad del filtro heurístico del WAF sino con un algoritmo que determine la naturaleza de la solicitud, realizando un trabajo igual o superior al que realiza un WAF.
+Esta hipótesis parte de ciertos supuestos que vale la pena mencionar para comprender los alcances y límites esperados.
+El primero es que es poco probable detectar un zero-day: por su naturaleza es algo nuevo, desconocido hasta el momento y que si bien puede guardar relación con algunas de las técnicas de ofuscación utilizadas en otros ataques, rompe con lo conocido hasta el momento.
+Por otro lado, la propia clasificación de la que se parte para ofrecer una solución a partir de los datos, depende necesariamente de líneas que hayan sido clasificadas previamente, con lo cual, superada la etapa de pruebas con un dataset etiquetado, la solución encontraría problemas serios para avanzar sobre un sistema productivo, dado que dependería de un factor externo (como el WAF u otro modelo entrenado) etiquetando los datos para entrenamiento.
+En cualquier caso la solución no se propone como un reemplazo al WAF y sus reglas, sino como un complemento adyacente al WAF que pueda ofrecer una solución híbrida para aumentar la seguridad.
+
 
 \section{Objetivos}
 
 \subsection{Objetivo General}
-\lipsum[8]
+Clasificar correctamente un conjunto de líneas de log asociadas a tráfico web normal o malicioso, con un ratio igual o superior al que realiza actualmente un WAF.
 
 \subsection{Objetivos Específicos}
-\lipsum[9]
+\begin{itemize}
+   \item Extraer de cada línea de log, las características semánticas particulares que nos aporten información sobre la intencionalidad de la solicitud.
+   \item Identificar las características de la línea que más peso tienen dentro de la definición de la etiqueta.
+   \item Generar un pipeline eficiente que permita procesar solicitudes en menos de 3 segundos.
+\end{itemize}
+
 
 \section{Solución Propuesta}
 \lipsum[10-11]
 
 \section{Metodología}
-\lipsum[12]
+Se espera lograr un pipeline de datos que permita la experimentación y prueba. Para el entorno global se utilizará Kubernetes como infraestructura de soporte, que provea contenedores necesarios para las tareas basados en la filosofía DevSecOps. 
+
+
+
+\subsubsection*{a) Ingesta}
+El software de soporte inicial sería una base de datos Postgres (dentro de un contenedor) que podría usar psql para ingestar u otro contenedor con Python y SQLAlchemy para la interacción.
+Por la misma naturaleza de las líneas (muchas con caracteres especiales y binarios) es necesario insertar línea por línea con una codificación amplia como \enquote{latin-1} con un control flexible de errores.
+Para trabajos de análisis se podría ingestar idealmente en una tabla Postgres que contenga un id, la línea en cuestión y su/s label/s.
+
+
+\subsubsection*{b) Limpieza y parseo}
+Esta etapa es compleja por varios motivos y las decisiones que se tomen en ésta pueden cambiar de raíz los resultados finales. En principio no se puede realizar una normalización como se haría con otros sets de datos, ya que eliminar caracteres especiales o aplanar el case (llevar todo a mayúsculas o a minúsculas), nos haría perder información elemental para nuestro objetivo.
+Por otro lado, la presencia, dentro del propio contenido de los datos, de símbolos que habitualmente se emplean como separadores de campos incrementa la complejidad del proceso de parseo. Caracteres como la coma (\texttt{,}), el punto y coma (\texttt{;}), el numeral (\texttt{\#}) o incluso caracteres de control como el salto de línea (\texttt{\textbackslash n}), el retorno de carro (\texttt{\textbackslash r}) y la tabulación (\texttt{\textbackslash t}) son utilizados con frecuencia por los atacantes para alterar el comportamiento esperado de los mecanismos de procesamiento de datos.
+
+En consecuencia, es necesario analizar individualmente cada conjunto de datos para identificar con precisión la posición de cada variable y asignarla correctamente a los campos de la estructura tabular que serán utilizados en las etapas posteriores del procesamiento.
+
+\subsubsection*{c) Selección de variables e ingeniería de características}
+Se debería realizar un concatenado de el método más el cuerpo de la solicitud (body) que incluiría la uri, el payload y el user-agent. Estos elementos están en discusión y la definición requiere un análisis más profundo sobre el dataset en particular.
+Para la ingeniería de características se podrían hacer varios cálculos sobre la línea en sí, incluyendo: entropía de Shannon, puerto destino, cantidad de caracteres especiales, cantidad de palabras clave, ratio de caracteres especiales sobre el total, largo de la línea, etc. 
+
+\subsubsection*{d) Extracción de embeddings}
+Sobre las variables seleccionadas y concatenadas, debería realizarse la extracción de embeddings, a partir de distintas librerías de transformers para probar cuál aporta mejores resultados. En este punto es necesario tomar otra decisión metodológica, relacionada al largo de la línea a tomar: si truncar los resultados sobre el largo de la mayoría y perder parte de los datos (usando un percentil de largo de 95 por ejemplo) o utilizar el máximo perjudicando la velocidad y el consumo de recursos.
+En este punto no tendría sentido mantener los datos en el motor SQL; debería exportarse a un archivo que puedan consumir los algoritmos de entrenamiento como podría ser parquet o archivos de matrices.
+
+\subsubsection*{e) Entrenamiento}
+Con los datos exportados, probar el entrenamiento con variantes de boosting y SVM cambiando parámetros y porcentajes de entrenamiento y prueba sobre el dataset.
+
+\subsubsection*{f) Prueba, pruebas cruzadas y recolección de métricas}
+El modelo entrenado, además de probarse con los datos que se apartaron para pruebas del mismo dataset, podrían testearse  de forma cruzada con datos de otro dataset para ver la flexibilidad del modelo.
+
 
 \subsection{Técnicas / Herramientas}
 \lipsum[13]
 
-% ================= REFERENCIAS-BIBLIOGRAFÍA =================
+
 \section{Referencias-Bibliografía}
 
-Ejemplo de cómo citar una fuente en el cuerpo del texto: \cite{einstein1905} o \cite{redhat2023}.
+Ejemplo de cómo citar una fuente en el cuerpo del texto: \cite{hassan2026improving} o \cite{montes2021web}.
 
-% 'heading=none' evita que biblatex cree un título secundario (como "References") 
-% y permite usar el título de la sección que definiste arriba.
 \printbibliography[heading=none]
 
 \end{document}
