@@ -132,26 +132,35 @@ def main():
         del clf
         gc.collect()
 
+    # (classification_report(
+    #    Y_test, all_preds, target_names=mlb.classes_, zero_division=0
+    # ))
+
+    # joblib.dump(mlb, "mlb.pkl")
+    # print(f"[OK] Modelos por clase en '{MODELS_DIR}/', binarizador en 'mlb.pkl'")
+#   1. Generamos el reporte en formato texto para seguir viéndolo en consola
     report_text = classification_report(
         Y_test, all_preds, target_names=mlb.classes_, zero_division=0
     )
     print(report_text)
 
+    # 2. Generamos el reporte como diccionario para exportarlo
     report_dict = classification_report(
-        Y_test, all_preds, target_names=mlb.classes_,
-        zero_division=0, output_dict=True
+        Y_test, all_preds, target_names=mlb.classes_, zero_division=0, output_dict=True
     )
 
+    # 3. Lo convertimos a DataFrame de Pandas
+    # El .transpose() hace que las clases queden como filas y las métricas (precision, recall, etc.) como columnas
     df_report = pd.DataFrame(report_dict).transpose()
 
-    csv_path = "metricas_reporte_secbert-lightgbm.csv"
+    # 4. Guardamos a CSV
+    csv_path = "metricas_reporte.csv"
     df_report.to_csv(csv_path, index=True, index_label="clase")
-
+    
     print(f"[OK] Métricas guardadas exitosamente en '{csv_path}'")
 
     joblib.dump(mlb, "mlb.pkl")
-    print(f"[OK] Modelos por clase '{MODELS_DIR}/' binarizador en 'mlb.pkl'")
-
+    print(f"[OK] Modelos por clase en '{MODELS_DIR}/', binarizador en 'mlb.pkl'")
 
 if __name__ == "__main__":
     main()

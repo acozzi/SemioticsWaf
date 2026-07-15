@@ -28,7 +28,7 @@ podman run --rm -it \
     -v $(pwd)/scripts/python:/workspace:Z \
     -v $(pwd)/datasets:/data:Z \
     --device nvidia.com/gpu=all \
-    --memory=10g \
+    --memory=4g \
     --memory-swap=16g \
     -w /workspace \
     localhost/secbert:0.1cuda \
