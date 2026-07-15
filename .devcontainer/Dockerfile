@@ -7,6 +7,8 @@ RUN dnf install -y \
     texlive-collection-langspanish \
     texlive-helvetic \
     texlive-biblatex \
+    texlive-newtx \
+    texlive-biblatex-ieee \
     biber \
     latexmk \
     make \
