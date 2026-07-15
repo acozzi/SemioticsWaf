@@ -1,18 +1,19 @@
 \documentclass[12pt]{article}
-
-% ===== Márgenes (replican w:pgMar: top/bottom 1440 twips, left/right 1080 twips) =====
-\usepackage[a4paper, top=2.54cm, bottom=2.54cm, left=1.9cm, right=1.9cm]{geometry}
-
-% ===== Fuente Arial en todo el documento (w:rFonts w:ascii="Arial") =====
+% \usepackage[a4paper, top=2.54cm, bottom=2.54cm, left=1.9cm, right=1.9cm]{geometry}
+% ===== Márgenes Estilo IEEE =====
+\usepackage[a4paper, top=1.9cm, bottom=2.54cm, left=1.57cm, right=1.57cm]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage{helvet}
-\renewcommand{\familydefault}{\sfdefault}
 
-% ===== Idioma (w:lang w:val="es-AR") =====
+% \usepackage{helvet}
+% \renewcommand{\familydefault}{\sfdefault}
+% ===== Fuente Times New Roman (Estándar IEEE) =====
+\usepackage{newtxtext,newtxmath}
+% bibliografía ieee
+\usepackage[style=ieee, backend=biber]{biblatex}
+\addbibresource{referencias.bib} % Nombre de tu archivo de base de datos bibliográfica
+
 \usepackage[spanish,es-noindentfirst]{babel}
-
-% ===== Borde doble de página (w:pgBorders val="double") en portada =====
 \usepackage{eso-pic}
 \usepackage{tikz}
 \newcommand{\pageborder}{%
@@ -24,8 +25,6 @@
     \end{tikzpicture}%
   }%
 }
-
-% Borde simple (una línea) para el resto de las páginas, a partir del salto de sección
 \newcommand{\pageborderSimple}{%
   \AddToShipoutPictureBG{%
     \begin{tikzpicture}[remember picture, overlay]
@@ -39,16 +38,18 @@
 \usepackage{setspace}
 \usepackage{lipsum} % placeholders lorem ipsum
 \usepackage{hyperref}
+\usepackage{graphicx}
 \hypersetup{hidelinks}
 
 \begin{document}
-
-% ================= PORTADA =================
-% Alineación tomada literalmente del XML: solo Título, Subtítulo,
-% BUENOS AIRES y SEGUNDO CUATRIMESTRE tienen jc="center"; el resto
-% (ITBA, Alumno, Profesor, Taller) queda con la alineación por defecto (izquierda).
-\pageborder % marco doble -> solo esta página (single-shot con \AddToShipoutPictureBG*)
+\pageborder
 \begin{titlepage}
+    \begin{tikzpicture}[remember picture, overlay]
+      \node[anchor=north east, xshift=-2cm, yshift=-2cm] 
+        at (current page.north east) 
+        {\includegraphics[width=3cm]{../Itba_bsas_logo.png}};
+    \end{tikzpicture}
+
     \vspace*{0.5cm}
     {\large INSTITUTO TECNOLÓGICO DE BUENOS AIRES}
 
@@ -59,6 +60,7 @@
     \vspace{1.2cm}
     {\Huge \bfseries SUBTÍTULO DEL PROYECTO}
     \end{center}
+    \vspace*{0.5cm}
 
     \vfill
 
@@ -78,12 +80,9 @@
     \end{center}
 \end{titlepage}
 
-% ================= SALTO DE SECCIÓN: a partir de acá, marco de una sola línea =================
 \pageborderSimple
 \pagestyle{plain}
 
-% "Introducción" era un párrafo suelto sin estilo -> \section
-% Ítems w:ilvl=0 -> \section (hermanos de Introducción); ítems w:ilvl=1 -> \subsection
 
 \section{Introducción}
 
@@ -123,24 +122,12 @@
 \lipsum[13]
 
 % ================= REFERENCIAS-BIBLIOGRAFÍA =================
-% Ejemplo con thebibliography (no requiere .bib externo, sirve para arrancar).
-% Si preferís gestionar citas con BibTeX/biblatex te paso esa variante también.
 \section{Referencias-Bibliografía}
 
-Ejemplo de cómo citar una fuente en el cuerpo del texto: \cite{apellidoAnio}.
+Ejemplo de cómo citar una fuente en el cuerpo del texto: \cite{einstein1905} o \cite{redhat2023}.
 
-\begin{thebibliography}{99}
-
-\bibitem{apellidoAnio}
-Apellido, N. (Año).
-\textit{Título del libro o artículo en cursiva}.
-Editorial o Revista, Volumen(Número), páginas.
-
-\bibitem{ejemploOnline}
-Apellido, N. (Año).
-\textit{Título del recurso}.
-Recuperado de \url{https://www.ejemplo.com}
-
-\end{thebibliography}
+% 'heading=none' evita que biblatex cree un título secundario (como "References") 
+% y permite usar el título de la sección que definiste arriba.
+\printbibliography[heading=none]
 
 \end{document}
