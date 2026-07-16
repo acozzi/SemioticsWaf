@@ -1,42 +1,34 @@
 \documentclass[12pt]{article}
-% \usepackage[a4paper, top=2.54cm, bottom=2.54cm, left=1.9cm, right=1.9cm]{geometry}
-% ===== Márgenes Estilo IEEE =====
 \usepackage[a4paper, top=1.9cm, bottom=2.54cm, left=1.57cm, right=1.57cm]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-
-% \usepackage{helvet}
-% \renewcommand{\familydefault}{\sfdefault}
-% ===== Fuente Times New Roman (Estándar IEEE) =====
 \usepackage{newtxtext,newtxmath}
-% bibliografía ieee
 \usepackage[style=ieee, backend=biber]{biblatex}
-\addbibresource{referencias.bib} % Nombre de tu archivo de base de datos bibliográfica
-
+\addbibresource{referencias.bib}
 \usepackage[spanish,es-noindentfirst]{babel}
 \usepackage{eso-pic}
 \usepackage{tikz}
-\newcommand{\pageborder}{%
-  \AddToShipoutPictureBG*{%
+\newcommand{\pageborder}{
+  \AddToShipoutPictureBG*{
     \begin{tikzpicture}[remember picture, overlay]
       \draw[double, double distance=1.2pt, line width=0.4pt]
         ([xshift=1cm,yshift=1cm]current page.south west) rectangle
         ([xshift=-1cm,yshift=-1cm]current page.north east);
-    \end{tikzpicture}%
-  }%
+    \end{tikzpicture}
+  }
 }
-\newcommand{\pageborderSimple}{%
-  \AddToShipoutPictureBG{%
+\newcommand{\pageborderSimple}{
+  \AddToShipoutPictureBG{
     \begin{tikzpicture}[remember picture, overlay]
       \draw[line width=0.6pt]
         ([xshift=1cm,yshift=1cm]current page.south west) rectangle
         ([xshift=-1cm,yshift=-1cm]current page.north east);
-    \end{tikzpicture}%
-  }%
+    \end{tikzpicture}
+  }
 }
 
 \usepackage{setspace}
-\usepackage{lipsum} % placeholders lorem ipsum
+\usepackage{lipsum}
 \usepackage{hyperref}
 \usepackage{graphicx}
 \usepackage{csquotes}
@@ -55,15 +47,12 @@
     \vspace*{0.5cm}
     {\large INSTITUTO TECNOLÓGICO DE BUENOS AIRES}
 
-   \begin{center}
-    \vspace{5cm}
-    \vspace*{0.5cm}
-    
+    \vspace*{5.5cm}
+
     \begin{adjustwidth}{2cm}{2cm}
         \centering
-        {\Huge \bfseries \linespread{1.5}\selectfont Interpretación semántica de solicitudes web en el marco de la ciberseguridad\par}
+        {\Huge \bfseries \linespread{1.5}\selectfont \MakeUppercase{Interpretación semántica de solicitudes web en capa de aplicación}\par}
     \end{adjustwidth}
-    \end{center}
     
     \vfill
 
@@ -103,16 +92,24 @@ Mejorar los niveles de detección de ataques en WAF a partir de los datos, es un
 En cambio \cite{montes2021web} realiza una aproximación muy similar a la que pretende plantear  este trabajo, aunque sobre presupuestos metodológicos diferentes. Si bien parte de arquitecturas transformers para la comprensión semántica de cada solicitud web, apunta al fine-tuning a partir de RoBERTa, antes que a la extracción de embeddings crudos para su posterior procesamiento. No buscan generalizar sobre un conjunto de solicitudes maliciosas per se, sino que proponen realizar un entrenamiento de modelos singulares para cada aplicación web.
 Es probable que el entrenamiento singular tenga mucho sentido a la hora de detectar anomalías, aunque no queda del todo claro en ese trabajo cómo se realizaría el etiquetado ya que en los experimentos se utilizan datasets ya etiquetados como CSIC 2010 y DRUPAL.
 En una segunda etapa, luego del fine-tuning de RoBERTa, utilizan OneClassSVM un clasificador binario para detectar los ataques en los datasets, y lo comparan con los resultados TPR y FPR usando ModSec como WAF.
-La potencia de RoBERTa también fue utilizada en \cite{aharon2024roberta} donde los autores experimentaron con un ensamble bastante más complejo pero con algunos parámetros similares. Su trabajo también utiliza herramientas transformers,  RoBERTa en particular y el dataset de CSIC 2010 para pruebas, además del dataset ATRDF 2023. Su propuesta se inspira en el framework GAN de forma muy original: identifican tokens reservados en el dataset original y los enmascaran con un token de máscara (literalment <MASK>), luego utilizan RoBERTa para generar el reemplazo esperable de esa fracción del código, lo cual entrega un dataset paralelo, distinto del original. A continuación utilizan nuevamente RoBERTa para comparar ambos, y calculan la similaridad del coseno de cada palabra para determinar anomalías. Por último, entrenan un clasificador de Random Forest para predecir y discriminar entre 'tráfico normal' y 'posible ataque'.
+La potencia de RoBERTa también fue utilizada en \cite{aharon2024roberta} donde los autores experimentaron con un ensamble bastante más complejo pero con algunos parámetros similares. Su trabajo también utiliza herramientas transformers,  RoBERTa en particular y el dataset de CSIC 2010 para pruebas, además del dataset ATRDF 2023. Su propuesta se inspira en el framework GAN de forma muy original: identifican tokens reservados en el dataset original y los enmascaran con un token de máscara (literalment <MASK>), luego utilizan RoBERTa para generar el reemplazo esperable de esa fracción del código, lo cual entrega un dataset paralelo, distinto del original. A continuación utilizan nuevamente RoBERTa para comparar ambos, y calculan la similaridad del coseno de cada palabra para determinar anomalías. Por último, entrenan un clasificador de Random Forest para predecir y discriminar entre \enquote{tráfico normal} y \enquote{posible ataque}.
 Otra característica en común de los dos trabajos mencionados anteriormente es que ambos obtienen como resultado esa clasificación binaria.
 En cambio en \cite{karacan2021novel} los autores apuntan a entregar ambos tipos de clasificación, una binaria (que discrimine ataque / legítimo) y una multiclase, clasificando hasta 8 clases en total (incluyendo al tráfico legítimo). Partiendo de la extracción de embeddings de la solicitud http, proceden a añadirle ruido usando el algoritmo Da-Sana.
 Para construir los embeddings utilizaron Keras con un padding posterior para normalizar los largos (es decir recortando las líneas que exceden el largo determinado y completando con ceros las que no llegan a él) usando los datasets CSIC-2010 y ECML/PKDD.
-Un desarrollo más amplio y complejo se encuentra en \cite{chen2021payload}. En este trabajo se presenta un proceso que acuña su propio nombre: DeepPTSD una sigla que describe básicamente el proceso propuesto, de Deep Learning Payload Traffic Detection Method Transfer Semi-Supervised Detection. Se trata de un ensamble bastante sofisticado que se entrena con datasets clasificados públicos y aspira a detectar líneas maliciosas en un WAF. A grandes rasgos el ensemble sigue un proceso similar a los demás, aunque con variantes en cada paso, por ejemplo los embeddings se extraen con Word2Vec luego se pre-entrena un modelo con esa información usando redes convolucionales. Con los resultados se realiza una aumentación de los datos que sigue dos caminos: 'keyword mining' que parte de un dataset de payloads y aplica una ecuación tf–idf para crear una biblioteca de payloads y luego una 'payload perturbation' que reemplaza ciertos tokens que detecta similares a los de la biblioteca en la línea a analizar.
+Un desarrollo más amplio y complejo se encuentra en \cite{chen2021payload}. En este trabajo se presenta un proceso que acuña su propio nombre: DeepPTSD una sigla que describe básicamente el proceso propuesto, de Deep Learning Payload Traffic Detection Method Transfer Semi-Supervised Detection. Se trata de un ensamble bastante sofisticado que se entrena con datasets clasificados públicos y aspira a detectar líneas maliciosas en un WAF. A grandes rasgos el ensemble sigue un proceso similar a los demás, aunque con variantes en cada paso, por ejemplo los embeddings se extraen con Word2Vec luego se pre-entrena un modelo con esa información usando redes convolucionales. Con los resultados se realiza una aumentación de los datos que sigue dos caminos: \enquote{keyword mining} que parte de un dataset de payloads y aplica una ecuación tf-idf para crear una biblioteca de payloads y luego una \enquote{payload perturbation} que reemplaza ciertos tokens que detecta similares a los de la biblioteca en la línea a analizar.
 
+Los trabajos mencionados parecen coincidir en un problema central: las reglas de WAF son eficientes para detectar un alto porcentaje de solicitudes maliciosas, pero son incapaces de detectar algunos tipos de ofuscación. Además, por su propia naturaleza, surgen como reacción a la detección de vulnerabilidades de tipo \enquote{zero-day} y esa reacción abre una ventana de oportunidad para el ciberdelito.
+Es por eso que se busca en todos una solución al problema a partir de los datos, con distintas estrategias que en definitiva resultan en una acción inmediata sobre una solicitud web, en la capa de WAF. Esta solución no implica un reemplazo del sistema de reglas tradicional, sino un complemento que mejore las métricas de detección. En cualquier caso, eso significa básicamente aumentar el TPR y reducir el FPR con distintas estrategias específicas de la ciencia de datos, en un margen de tiempo poco considerable.
 
 \section{Definición del problema}
-Los trabajos mencionados parecen coincidir en un problema central: las reglas de WAF son eficientes para detectar un alto porcentaje de solicitudes maliciosas, pero son incapaces de detectar algunos tipos de ofuscación. Además, por su propia naturaleza, surgen como reacción a la detección de vulnerabilidades de tipo 'zero-day' y esa reacción abre una ventana de oportunidad para el ciberdelito.
-Es por eso que se busca en todos una solución al problema a partir de los datos, con distintas estrategias que en definitiva resultan en una acción inmediata sobre una solicitud web, en la capa de WAF. Esta solución no implica un reemplazo del sistema de reglas tradicional, sino un complemento que mejore las métricas de detección. En cualquier caso, eso significa básicamente aumentar el TPR y reducir el FPR con distintas estrategias específicas de la ciencia de datos, en un margen de tiempo poco considerable.
+La seguridad de los activos digitales es un problema a nivel global que dista de poder resolverse de forma taxativa. Hay muchos enfoques al respecto, en este trabajo se toma como referencia el modelo OSI \cite{day1983osi} definido por la organización internacional ISO para la seguridad en las comunicaciones computacionales. Más allá del problema global, este trabajo se focalizará en tres problemas dependientes de éste, los cuales se intentarán explicar a continuación.
+El modelo OSI define 7 capas abstractas de seguridad, una de las cuales, la capa 3 se ocupa de la seguridad de red.
+Es en esa capa donde se colocan los cortafuegos de aplicación (WAF por Web Application Firewall), un filtro lógico que media entre una aplicación e internet y se ocupa, entre otras funciones, de definir si una solicitud es legítima o no para proceder a su bloqueo o redireccionamiento hacia el servicio.
+Esa definición no es sencilla por varios motivos y la definición que se toma no siempre es la correcta. La OWASP Foundation (por sus siglas en inglés Open Web Application Security Project) reconoce 78 distintos tipos de ataques, aunque la cifra está en constante movimiento. Cada uno de ellos no llega al WAF con una etiqueta de ‘malicioso’ en el encabezado, sino que lo habitual es que se recurra a distintas técnicas de ofuscación para evitar la detección, lo cual constituye el primer problema.
+Y esa detección, recurre principalmente a expresiones regulares (regex) que buscan patrones dentro de la solicitud que podrían ser signo de un ataque de los mencionados.
+ OWASP provee de forma abierta cerca de 300 reglas para ese fin a través del programa CRS (Owasp Core Rule Set) que se pueden implementar en cualquier WAF. Owasp desarrolló un WAF de código abierto, llamado ModSecurity (de ahora en más Modsec) al cual se le pueden definir esas reglas, con distintos niveles de paranoia. A mayores niveles de paranoia, más cantidad de falsos positivos, a menor, más posibilidades de bypass, lo cual constituye el segundo problema.
+El tercer problema es procedimental: Supongamos que un atacante descubre una vulnerabilidad en un sistema (momento llamado zero-day), los responsables de ese servicio vulnerado detectan la intrusión, lo reportan, Owasp u otro organismo produce una regla para ese exploit, publican la regla y se reconfigura el WAF con la actualización. Este pipeline produce necesariamente una ventana de oportunidad muy importante, que en 2025 promedió los 241 días de vulnerabilidad.
+
 
 
 \section{Hipótesis}
