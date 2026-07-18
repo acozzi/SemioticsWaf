@@ -1,8 +1,6 @@
 {
   "name": "LaTeX Fedora",
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
+  "image": "localhost/latex-fedora-local",
   "customizations": {
     "vscode": {
       "extensions": [

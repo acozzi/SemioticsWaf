@@ -79,10 +79,23 @@
 \section{Introducción}
 
 \subsection{Contexto}
-\lipsum[1]
+En el cine de acción, es habitual ver personajes asociados al ciberdelito para resolver situaciones que demanda la trama. Eso en parte se debe a que en las últimas décadas, muchos de los activos más valiosos del planeta son digitales, como lo podría ser un tren o un banco a mediados del siglo pasado. Y esa imagen que ha construído el cine, de un personaje aislado con varias pantallas, penetrando sistemas tiene poca relación con la realidad, que habitualmente suele ser menos atractiva y mucho más cercana.
+
+Los ataques de ingeniería social, orientados a tomar el control del Whatsapp de la víctima, o incluso de su Home Banking son parte del mismo problema; así como el correo del príncipe Nigeriaro que nos contacta para sacar fortunas de su país, el ícono del Messenger que se tiene que poner azul si reenviamos un mensaje a un contacto o los millones de mensajes que llegan a diario con felicitaciones por haber ganado un premio.
+
+Del otro lado, los proveedores intentan concientizar a los usuarios con alertas de estafas, reenvío a la carpeta de Spam de los correos sospechosos o el bloqueo de la clave cuando alguien se equivoca varias veces, por tratarse de un posible ataque de fuerza bruta. La seguridad se asume como resposabilidad compartida y se distribuye en todos los niveles posibles, desde el desarrollo seguro de aplicaciones, filtros en la red perimetral, doble factor de autenticación, etc.
+
+En uno de esos niveles se encuentra el cortafuegos de aplicación o WAF (Web Application Firewall), una tecnología desarrollada en la década de 1990 (vinculada al nacimiento de la WWW en 1993) especializada en analizar el tráfico web que llega a una aplicación y tomar acciones sobre esas solicitudes, en definitiva bloquear o dejar pasar esas solicitudes.
+
+Los WAFs tradicionalmente aplican sobre esas solicitudes fórmulas de expresiones regulares, basadas en firmas de ataques conocidos, aunque en los últimos años han sumado técnicas más amplias como listas de reputación, bloqueos por geolocalización detección de bots en base al comportamiento. Este trabajo apunta centralmente a la mejora de ese filtro basado en firmas de ataques conocidos.
+
+Los CVE (Por Common Vulnerabilities and Exposures) son esos ataques conocidos mencionados, cada uno de ellos tiene un código de registro utilizado para seguimiento, software afectado, mitigación y relación con otros CVEs que, quedan ligados a la publicación de los parches y nuevas reglas de WAF cada vez que surge uno nuevo. En el mismo nombre, radica su debilidad: se trata de reglas y parches relacionados a vulnerabilidaes conocidas, asumiendo de facto que antes de su publicación eran desconocidas.
+
 
 \subsection{Justificación del estudio}
-\lipsum[2]
+Imaginemos un escenario donde un ciber delincuente logra una forma de penetrar un sistema a partir de una vulnerabilidad (desconocida hasta el momento) del mismo. En algún momento (que puede durar entre 1 segundo y 10 años) el responsable de ese sistema lo detecta y lo reporta. En ciberseguridad, ese momento se llama zero-day, aun cuando la vulnerabilidad pueda haber existido desde tiempo atrás, se trata del día cero para el camino de soluciones posibles a ese problema.
+
+El reporte de esa vulnerabilidad nueva, sería resuelto por una comunidad de colaboradores, en el caso de algunos proyectos de software libre o por equipos de 
 
 \subsection{Alcances del trabajo y limitaciones}
 \lipsum[3]
