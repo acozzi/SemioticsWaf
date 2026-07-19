@@ -93,12 +93,29 @@ Los CVE (Por Common Vulnerabilities and Exposures) son esos ataques conocidos me
 
 
 \subsection{Justificación del estudio}
-Imaginemos un escenario donde un ciber delincuente logra una forma de penetrar un sistema a partir de una vulnerabilidad (desconocida hasta el momento) del mismo. En algún momento (que puede durar entre 1 segundo y 10 años) el responsable de ese sistema lo detecta y lo reporta. En ciberseguridad, ese momento se llama zero-day, aun cuando la vulnerabilidad pueda haber existido desde tiempo atrás, se trata del día cero para el camino de soluciones posibles a ese problema.
+Imaginemos un escenario donde un ciber delincuente logra una forma de penetrar un sistema a partir de una vulnerabilidad (desconocida hasta el momento) del mismo. En algún momento (que podría durar entre un segundo y diez años) el responsable de ese sistema lo detecta y lo reporta. En ciberseguridad, ese momento se llama zero-day, aun cuando la vulnerabilidad pueda haber existido desde tiempo atrás, se trata del día cero para el camino de soluciones posibles a ese problema.
 
-El reporte de esa vulnerabilidad nueva, sería resuelto por una comunidad de colaboradores, en el caso de algunos proyectos de software libre o por equipos de 
+El reporte de esa vulnerabilidad nueva, sería resuelto por una comunidad de colaboradores, o por equipos de desarrollo, luego sería liberado el parche y posiblemente una regla de WAF asociada a esa vulnerabilidad sería actualizada o creada. Después, los responsables de los distintos sistemas en todo el mundo que utilizan ese sistema, aplicarían la actualización y el sistema volvería a ser seguro.
+
+En un mundo ideal, ese proceso completo duraría un par de semanas, en el mundo real de 2025 ese proceso duró una media de 141 días \cite{ibm_databreach_2025}, según el reporte de Cost of Breach que IBM publica cada año. Si bien como demuestra el informe, ese proceso ha mejorado en los últimos años (en parte gracias a los paradigmas de desarrollo ágil y filosofías de CICD) es probable que nunca sea suficiente para cerrar esa ventana temporal de exposición siguiendo ese pipeline de reporte/actualización.
+
+Este trabajo busca explorar posibles soluciones o reducciones de ese gap, a partir de técnicas y algoritmos de aprendizaje automático, aplicadas en la capa de WAF para detectar solicitudes maliciosas.
+
+Un ejemplo no imaginario fue el caso de un CVE conocido como \enquote{Log4Shell} de 2021 reportado por un empleado de Ali Baba Cloud el 24 de noviembre y asumido por apache el 10 de diciembre. Akamai, un productor privado de WAF, publicó parches al día siguiente \cite{akamai2021log4j} y el Instituto Nacional de Estándares y Tecnología (de EEUU, NIST por sus siglas en inglés) en \cite{nvd2021-44228} el 12 de diciembre del mismo año. Como se señala en \cite{hiesgen2022race} la vulnerabilidad existía al menos desde 2016, cuando se publicó el trabajo de \cite{munoz2016jndi} y cuya existencia podría remontarse hasta 2013, año en que se publicó el commit que dio origen a la vulnerabilidad \cite{apache2013log4j2commit}. Los primeros parches no fueron suficientes, lo que requirió nuevas versiones publicadas sobre el mismo, hasta el 28 de diciembre de 2021 \cite{nvd2021-44832}.
+
+La vulnerabilidad tuvo notoriedad mundial ya que afectó a plataformas populares como Minecraft, Twitter y Cisco, y su difusión permitió miles de ataques efectivos en los primeros días y cientos de millones de dispositivos afectados \cite{unraveling2025log4shell}. 
+
+Las técnicas aplicadas en \enquote{Log4Shell} no diferían demasiado de los ataques conocidos previamente. Sobre este supuesto, tiene sentido la propuesta de pensar un sistema de aprendizaje automático que trabaje junto a las reglas de WAF pero de forma más flexible que las mismas, basados en el comportamiento contínuo de las solicitudes.
 
 \subsection{Alcances del trabajo y limitaciones}
-\lipsum[3]
+Clasificar solicitudes web utilizando técnicas y algoritmos de aprendizaje automático, trabajando junto al WAF, de mínima podría mejorar los ratios de detección e incluso detectar reglas que no se han configurado o no se han actualizado correctamente. De máxima, podría detectar una vulnerabilidad de cero-day, antes de la publicación por los organismos de seguimiento y parcheo. No obstante es necesario tener en consideración las limitaciones intrínsecas a la propia propuesta desde lo práctico y lo conceptual.
+
+En principio, el set de datos utilizado, proviene de un entorno controlado \cite{riera2022capec}, desplegado ad-hoc para investigación y no de un entorno de producción real. Los logs de tráfico web contienen información sensible, valiosa y confidencial que otorga demasiada información sobre el negocio y el desarrollo, por lo cual es esperable que en general no se publiquen.
+
+Por otro lado, si el insumo de datos principal es un conjunto de datos etiquetados, el proyecto nace con una dependencia externa, que a su vez plantea otras dificultades: el WAF etiquetando produce falsos positivos, los cuales serían tomados como referencia, contaminando el entrenamiento del modelo. Si en su defecto quisieramos realizar el etiquetado a partir de analisis forense humano, el tiempo y costo de la producción de datos se dispararía, imposibilitando procesos de reentrenamiento automatizado y aun así, sin garantizar la certeza de las etiquetas.  
+
+
+
 
 \section{Estado de la cuestión}
 Mejorar los niveles de detección de ataques en WAF a partir de los datos, es un problema constante y recurrente dado que la cantidad y creatividad de los ataques se sostiene en el tiempo. Las dinámicas elementales desde el punto de vista técnico para quienes no estén familiarizados con el problema de la seguridad y la acción del WAF son trabajadas en \cite{hassan2026improving} donde se realiza una exploración metodológica acerca de la arquitectura necesaria para detectar y bloquear amenazas de tipo SQLI; si bien menciona los aportes que podrían hacer las técnicas de deep learning en esa capa, no incluye ninguna en su propuesta. Sí aporta algunas nociones metodológicas que podrían ayudar en la etapa de experimentación y, sobre todo, al momento de comparar con los filtros heurísticos.
