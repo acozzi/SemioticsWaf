@@ -128,7 +128,7 @@ En cambio, \cite{montes2021web} realiza una aproximación muy similar a la que p
 
 Es probable que el entrenamiento singular tenga mucho sentido a la hora de detectar anomalías, aunque no queda del todo claro en ese trabajo cómo se realizaría el etiquetado ya que en los experimentos se utilizan datasets ya etiquetados como CSIC 2010 y DRUPAL.
 
-En una segunda etapa, luego del fine-tuning de RoBERTa, utilizan OneClassSVM un clasificador binario para detectar los ataques en los datasets, y lo comparan con los resultados TPR y FPR usando ModSec como WAF.
+En una segunda etapa, luego del fine-tuning de RoBERTa, utilizan OneClassSVM un clasificador binario para detectar los ataques en los datasets, y lo comparan con los aciertos(Ratio de aciertos o True Positive Rate, de ahora en más TPR) y falsos positivos (en adelante FPR por False Positive Ratio) usando ModSec como WAF.
 
 La potencia de RoBERTa también fue utilizada en \cite{aharon2024roberta} donde los autores experimentaron con un ensamble bastante más complejo pero con algunos parámetros similares. Su trabajo también utiliza herramientas transformers,  RoBERTa en particular y el dataset de CSIC 2010 para pruebas, además del dataset ATRDF 2023. Su propuesta se inspira en el framework GAN de forma muy original: identifican tokens reservados en el dataset original y los enmascaran con un token de máscara (literalment <MASK>), luego utilizan RoBERTa para generar el reemplazo esperable de esa fracción del código, lo cual entrega un dataset paralelo, distinto del original. A continuación utilizan nuevamente RoBERTa para comparar ambos, y calculan la similaridad del coseno de cada palabra para determinar anomalías. Por último, entrenan un clasificador de Random Forest para predecir y discriminar entre \enquote{tráfico normal} y \enquote{posible ataque}.
 
@@ -185,43 +185,44 @@ Clasificar correctamente un conjunto de líneas de log asociadas a tráfico web 
 
 
 \section{Solución Propuesta}
-\begin{itemize}
-    \item extracción de embeddings
-    \item extracción de features
-    \item entrenamiento con clasificadores
-\end{itemize}
+
+Propongo desarrollar un modelo de aprendizaje automático supervisado que logre interpretar semánticamente las solicitudes web que llegan a un WAF y, en base a esa interpretación, clasificarlas entre los distintos tipos de ataques posibles o solicitud legítima.
+
+Para ello, partiendo de un set de datos previamente clasificado, extraer embeddings de ciertos campos a partir de modelos transformers, extraer características con distintas técnicas de ingeniería y con esa información, entrenar un modelo con un algoritmo clasificador, que pueda hacer esa clasificación sobre datos sin clasificar.
+
+La falta de especificidad del modelo transformers y el algoritmo clasificador se debe a que probaré con distintas combinaciones de ensamble para evaluar los rendimientos de cada combinación. 
 
 \section{Metodología}
-Se espera lograr un pipeline de datos que permita la experimentación y prueba. Para el entorno global se utilizará Kubernetes como infraestructura de soporte, que provea contenedores necesarios para las tareas basados en la filosofía DevSecOps. 
-
-
+Se espera lograr un pipeline de datos que permita la experimentación y prueba de distintos modelos y librerías. Para el entorno global se utilizará Kubernetes como infraestructura de soporte, que provea contenedores necesarios para las tareas basados en la filosofía DevSecOps. 
 
 \subsubsection*{a) Ingesta}
 El software de soporte inicial sería una base de datos Postgres (dentro de un contenedor) que podría usar psql para ingestar u otro contenedor con Python y SQLAlchemy para la interacción.
 
-Por la misma naturaleza de las líneas (muchas con caracteres especiales y binarios) es necesario insertar línea por línea con una codificación amplia como \enquote{latin-1} con un control flexible de errores.
+Por la misma naturaleza de las líneas de log (muchas con caracteres especiales y binarios) es necesario insertar línea por línea con una codificación amplia como \enquote{latin-1} con un control flexible de errores.
 
-Para trabajos de análisis se podría ingestar idealmente en una tabla Postgres que contenga un id, la línea en cuestión y su/s label/s.
+Para trabajos de análisis se podría ingestar idealmente en una tabla Postgres que contenga un id, la línea en cuestión como string y su/s label/s como string o vector de strings.
 
 
 \subsubsection*{b) Limpieza y parseo}
 Esta etapa es compleja por varios motivos y las decisiones que se tomen en ésta pueden cambiar de raíz los resultados finales. En principio no se puede realizar una normalización como se haría con otros sets de datos, ya que eliminar caracteres especiales o aplanar el case (llevar todo a mayúsculas o a minúsculas), nos haría perder información elemental para nuestro objetivo.
 
-Por otro lado, la presencia, dentro del propio contenido de los datos, de símbolos que habitualmente se emplean como separadores de campos incrementa la complejidad del proceso de parseo. Caracteres como la coma (\texttt{,}), el punto y coma (\texttt{;}), el numeral (\texttt{\#}) o incluso caracteres de control como el salto de línea (\texttt{\textbackslash n}), el retorno de carro (\texttt{\textbackslash r}) y la tabulación (\texttt{\textbackslash t}) son utilizados con frecuencia por los atacantes para alterar el comportamiento esperado de los mecanismos de procesamiento de datos.
+Por otro lado, la presencia, dentro del propio contenido de los datos, de símbolos que habitualmente se emplean como separadores de campos incrementa la complejidad del proceso de parseo. Caracteres como la coma (\texttt{,}), el punto y coma (\texttt{;}), el numeral (\texttt{\#}) o incluso caracteres de control como el salto de línea (\texttt{\textbackslash n}), el retorno de carro (\texttt{\textbackslash r}) y la tabulación (\texttt{\textbackslash t}) son utilizados con frecuencia por los atacantes para alterar el comportamiento esperado de los mecanismos de procesamiento de datos. Incluso una solicitud legítima puede contener comas (\texttt{,}) y eso rompería la estructura de un CSV.
 
 En consecuencia, es necesario analizar individualmente cada conjunto de datos para identificar con precisión la posición de cada variable y asignarla correctamente a los campos de la estructura tabular que serán utilizados en las etapas posteriores del procesamiento.
 
 \subsubsection*{c) Selección de variables e ingeniería de características}
-Se debería realizar un concatenado de el método más el cuerpo de la solicitud (body) que incluiría la uri, el payload y el user-agent. Estos elementos están en discusión y la definición requiere un análisis más profundo sobre el dataset en particular.
+Se debería realizar un concatenado del método más el cuerpo de la solicitud (body) que incluiría la uri, el payload y el user-agent. Estos elementos están en discusión y la definición requiere un análisis más profundo sobre el dataset en particular.
 Para la ingeniería de características se podrían hacer varios cálculos sobre la línea en sí, incluyendo: entropía de Shannon, puerto destino, cantidad de caracteres especiales, cantidad de palabras clave, ratio de caracteres especiales sobre el total, largo de la línea, etc. 
 
 \subsubsection*{d) Extracción de embeddings}
-Sobre las variables seleccionadas y concatenadas, debería realizarse la extracción de embeddings, a partir de distintas librerías de transformers para probar cuál aporta mejores resultados. En este punto es necesario tomar otra decisión metodológica, relacionada al largo de la línea a tomar: si truncar los resultados sobre el largo de la mayoría y perder parte de los datos (usando un percentil de largo de 95 por ejemplo) o utilizar el máximo perjudicando la velocidad y el consumo de recursos.
-
+Sobre las variables seleccionadas y concatenadas, debería realizarse la extracción de embeddings, a partir de distintas librerías de transformers para probar cuál aporta mejores resultados. En este punto es necesario tomar otra decisión metodológica, relacionada al largo de la línea a tomar: si truncar los resultados sobre el largo de la mayoría y perder parte de los datos (usando un percentil de largo de 95 por ejemplo) o utilizar el máximo perjudicando la velocidad y el consumo de recursos. Entre las librerías que se podrían considerar se encuentran: SecBERT \cite{jackaduma2022secbert}, DeBERTa \cite{he2021deberta},
+RoBERTa \cite{liu2019roberta}, SecureBERT \cite{aghaei2023securebert},
+CANINE \cite{clark2022canine} y DistilRoBERTa \cite{sanh2019distilbert}, aunque la idea no es probar todas.
 En este punto no tendría sentido mantener los datos en el motor SQL; debería exportarse a un archivo que puedan consumir los algoritmos de entrenamiento como podría ser parquet o archivos de matrices.
 
 \subsubsection*{e) Entrenamiento}
-Con los datos exportados, probar el entrenamiento con variantes de boosting y SVM cambiando parámetros y porcentajes de entrenamiento y prueba sobre el dataset.
+Con los datos exportados, probar el entrenamiento con distintos algoritmos de clasificación: variantes de \textit{gradient boosting} —LightGBM \cite{ke2017lightgbm}, XGBoost \cite{chen2016xgboost} y CatBoost
+\cite{prokhorenkova2018catboost}—, Support Vector Machine \cite{cortes1995svm} y PyTorch \cite{paszke2019pytorch}, variando hiperparámetros, porcentajes de entrenamiento y pruebas sobre el dataset.
 
 \subsubsection*{f) Prueba, pruebas cruzadas y recolección de métricas}
 El modelo entrenado, además de probarse con los datos que se apartaron para pruebas del mismo dataset, podrían testearse  de forma cruzada con datos de otro dataset para ver la flexibilidad del modelo.
