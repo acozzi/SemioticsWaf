@@ -192,6 +192,7 @@ Para ello, partiendo de un set de datos previamente clasificado, extraer embeddi
 La falta de especificidad del modelo transformers y el algoritmo clasificador se debe a que probaré con distintas combinaciones de ensamble para evaluar los rendimientos de cada combinación. 
 
 \section{Metodología}
+\label{sec:metodologia}
 Se espera lograr un pipeline de datos que permita la experimentación y prueba de distintos modelos y librerías. Para el entorno global se utilizará Kubernetes como infraestructura de soporte, que provea contenedores necesarios para las tareas basados en la filosofía DevSecOps. 
 
 \subsubsection*{a) Ingesta}
@@ -228,7 +229,24 @@ El modelo entrenado, además de probarse con los datos que se apartaron para pru
 
 
 \subsection{Técnicas / Herramientas}
-\lipsum[13]
+
+A continuación se detallan varias de las tecnologías, librerías y algoritmos concretos que se emplearán para ejecutar cada una de las etapas descritas en el punto \ref{sec:metodologia}. Es probable que en la etapa de experimentación algunas se reemplacen o se añadan otras.
+
+\begin{itemize}
+
+\item \textbf{Infraestructura:} Kubernetes como orquestador de contenedores para las distintas etapas del pipeline, y PostgreSQL como motor de base de datos para la ingesta inicial de los logs. Para orquestar y ejecutar las pruebas cross entre transformers y clasificadores, Apache Airflow conectado a Kubernetes con KPO (Kubernetes Pod Operator) para que cada tarea construya su propio contenedor aislado y efímero.
+
+\item \textbf{Procesamiento y limpieza de datos:} Python como lenguaje principal, junto con las librerías pandas y NumPy para la manipulación tabular, el tratamiento de valores nulos y la concatenación de campos.
+
+\item \textbf{Extracción de embeddings:} HuggingFace Transformers (\texttt{AutoTokenizer}, \texttt{AutoModel}) sobre modelos preentrenados de dominio como SecBERT \cite{jackaduma2022secbert} entre otros, con PyTorch \cite{paszke2019pytorch} como backend de inferencia (con soporte GPU/CPU). La tokenización se realiza con truncamiento y padding a un largo fijo (aún no determinado).
+
+\item \textbf{Manejo de datos a gran escala:} Como el entorno de desarrollo está pensado para una laptop personal (con GPU incorporada) es necesario realizar checkpointing de los embeddings por lote en el disco (formato \texttt{.npy}) para tolerar mejor los fallos y reanudar procesos que mata el Sistema Operativo. La escritura en formato Parquet (vía PyArrow) para evitar la acumulación de metadata en memoria y si es necesario, en forma de streaming o chunks pequeños.
+
+\item \textbf{Entrenamiento y clasificación:} scikit-learn para la partición de datos (\texttt{train\_test\_split}), la binarización de etiquetas multi-clase (\texttt{MultiLabelBinarizer}) y el cálculo de métricas (\texttt{classification\_report}); LightGBM como algoritmo de clasificación, además de los otros mencionados.
+
+\item \textbf{Evaluación:} Métricas de precisión, recall, f1-score y soporte por clase, junto con promedios micro, macro, ponderado (\textit{weighted}) y por muestra (\textit{samples avg}), estos últimos particularmente relevantes dado el fuerte desbalance entre clases del dataset.
+
+\end{itemize}
 
 
 \section{Referencias-Bibliografía}
