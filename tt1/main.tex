@@ -1,0 +1,248 @@
+
+\documentclass[12pt, a4paper]{article}
+
+\setlength{\headheight}{14.32365pt}
+\addtolength{\topmargin}{-0.00365pt}
+
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish, es-tabla]{babel}
+\usepackage{helvet} % Tipografía sans-serif limpia estilo Helvetica/Arial
+\renewcommand{\familydefault}{\sfdefault} % Configura el documento en sans-serif
+
+
+\babelprovide[import, onchar=ids fonts]{spanish}
+\babelprovide[import, onchar=ids fonts]{english}
+
+
+\usepackage{enumitem}
+\setlist[itemize]{label=-}
+
+\usepackage{xcolor}
+% Azul Oficial ITBA (#002B49)
+\definecolor{itbablue}{RGB}{0, 43, 73}
+
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+
+% Configuración de estilo de títulos de sección
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{itbablue}}{\thesection.}{0.5em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{itbablue}}{\thesubsection.}{0.5em}{}
+
+% Configuración de encabezados y pies de página para páginas interiores
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\textcolor{gray}{ITBA -- Proyecto de Tesis}}
+\lhead{\small\textcolor{gray}{\leftmark}}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=itbablue,
+    citecolor=itbablue,
+    urlcolor=itbablue,
+    pdfauthor={Apellido/s, Nombre/s},
+    pdftitle={Título del Proyecto -- ITBA}
+}
+
+\begin{document}
+
+\begin{titlepage}
+    % Dibujo del marco perimetral idéntico al PDF original
+    \begin{tikzpicture}[remember picture, overlay]
+        \draw[line width=1.2pt, color=itbablue]
+            ($(current page.north west) + (1.2cm,-1.2cm)$)
+            rectangle
+            ($(current page.south east) + (-1.2cm,1.2cm)$);
+        \draw[line width=0.5pt, color=itbablue]
+            ($(current page.north west) + (1.3cm,-1.3cm)$)
+            rectangle
+            ($(current page.south east) + (-1.3cm,1.3cm)$);
+    \end{tikzpicture}
+
+    \vspace*{-0.2cm}
+    
+    % Encabezado superior: Nombre de la institución a la izquierda y Logo ITBA a la derecha
+    \noindent
+    \begin{minipage}[c]{0.6\textwidth}
+        {\bfseries\large INSTITUTO TECNOLÓGICO\\DE BUENOS AIRES}
+    \end{minipage}%
+    \begin{minipage}[c]{0.4\textwidth}
+        \raggedleft
+        \IfFileExists{logo-itba.png}{%
+            \includegraphics[width=4.2cm]{logo-itba.png}%
+        }{%
+            \framebox{\parbox{3.8cm}{\centering \textbf{ITBA}\\[2pt]\small Logo Institucional}}%
+        }
+    \end{minipage}
+
+    \vfill
+
+    % Título del proyecto centrado
+    \begin{center}
+        {\fontsize{20pt}{26pt}\selectfont \textbf{TÍTULO DEL PROYECTO}}
+    \end{center}
+
+    \vfill
+
+    % Información del trabajo y de la materia
+    \noindent
+    \begin{minipage}{\textwidth}
+        \setstretch{1.3}
+        \large
+        \textbf{ALUMNO/A:} Apellido/s, Nombre/s (Leg. N° XXXXX) \\[0.3cm]
+        \textbf{DIRECTOR/A DE TESIS:} Apellido/s, Nombre/s \\[0.3cm]
+        \textbf{TALLER:} Taller de Tesis 1 -- Maestría en Ciencia de Datos \\[0.3cm]
+        \textbf{PROFESORES/AS:} Apellido/s, Nombre/s
+    \end{minipage}
+
+    \vfill
+    \vspace{0.8cm}
+
+    % Pie de la carátula centrado
+    \begin{center}
+        {\large \textbf{BUENOS AIRES}} \\[0.2cm]
+        {\large \textbf{PRIMER / SEGUNDO CUATRIMESTRE, 20XX}}
+    \end{center}
+    \vspace*{0.3cm}
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+
+
+
+\section{Introducción}
+
+\subsection{Contexto del proyecto}
+\textbf{Contextualizar el escenario general, dominio temático y entorno donde se inserta el proyecto de investigación o desarrollo.}
+
+\vspace{0.2cm}
+\noindent \textit{El sistema de bicicletas públicas EcoBici de la Ciudad de Buenos Aires constituye un pilar clave en la movilidad sustentable, registrando miles de desplazamientos diarios entre sus múltiples estaciones distribuidas en la red urbana.}
+
+\subsection{Justificación del estudio}
+\textbf{Se debe explicitar la relevancia y conveniencia del estudio planteado, justificando el valor teórico, práctico o metodológico del trabajo.}
+
+\vspace{0.2cm}
+\noindent \textit{Comprender la dinámica de flujos y la centralidad de las estaciones permite identificar cuellos de botella, optimizar las estrategias logísticas de rebalanceo de bicicletas y aportar evidencia empírica para la futura expansión de la infraestructura vial urbana \cite{gonzalez2022ecobici}.}
+
+\subsection{Alcances del trabajo}
+\textbf{Detallar los límites operacionales y temporales del proyecto (qué abarca concretamente la investigación).}
+
+\vspace{0.2cm}
+\noindent \textit{El estudio abarca el análisis del conjunto de datos de viajes de EcoBici correspondientes al período lectivo 2025 en CABA, enfocándose en la topología del grafo, la detección de comunidades urbanas y el cálculo de métricas de centralidad.}
+
+\section{Estado de la cuestión}
+\textbf{Se deben estructurar las subsecciones según temáticas relevantes. Aclarar antecedentes de dominio (investigaciones sobre el problema específico) y antecedentes metodológicos (herramientas, algoritmos o técnicas previas aplicadas al área). Utilizar citas bibliográficas mediante BibTeX.}
+
+\subsection{Micromovilidad y sistemas de transporte compartidos}
+\noindent \textit{La literatura sobre transporte urbano resalta el uso de sistemas de micro-movilidad para caracterizar la eficiencia del transporte público \cite{gonzalez2022ecobici}. Trabajos previos en redes de bicicletas analizan patrones de demanda temporal y hábitos de desplazamiento en grandes urbes.}
+
+\subsection{Teoría de Redes Complejas}
+\noindent \textit{En el ámbito metodológico, la teoría de redes complejas ha sido ampliamente utilizada para modelar grafos dirigidos y ponderados de transporte \cite{newman2018networks}, evaluando propiedades topológicas e identificando nodos críticos de conectividad multimodal \cite{rodriguez2021complex}.}
+
+\section{Definición del problema}
+
+\subsection{Problema general}
+\textbf{Describir en detalle la problemática concreta a abordar, sus causas y efectos.}
+
+\vspace{0.2cm}
+\noindent \textit{Existe una acusada asimetría en los viajes diarios que genera desequilibrios en la disponibilidad de bicicletas en hora pico, exigiendo costosas operaciones de redistribución sin contar con un modelo predictivo guiado por métricas topológicas de red.}
+
+\subsection{Preguntas de investigación}
+\textbf{Formular las preguntas específicas que orientarán la investigación.}
+
+\vspace{0.2cm}
+\noindent \textit{¿Cuáles son las estaciones que actúan como conectores críticos (alta intermediación) en la red EcoBici y cómo se agrupan espacialmente las estaciones formando comunidades de alto tráfico?}
+
+\section{Descripción del set de datos}
+\label{sec:dataset}
+
+\subsection{Origen y contexto del dataset}
+\textbf{Contextualizar explícitamente de dónde proviene el dataset y cómo fue colectado.}
+
+\vspace{0.2cm}
+\noindent \textit{Los datos provienen del portal de datos abiertos del Gobierno de la Ciudad de Buenos Aires (BA Data), conteniendo registros anonimizados recolectados automáticamente por los sensores de cada estación de EcoBici.}
+
+\subsection{Descripción técnica}
+\textbf{Explicitar las características de las variables e información relevante para el planteamiento de la hipótesis. Esta sección puede incluir gráficas, diagramas u otros recursos descriptivos según corresponda.}
+
+\vspace{0.2cm}
+\noindent \textit{El dataset incluye variables estructuradas como ID de estación de origen/destino, fecha/hora inicio y fin, duración y coordenadas. A partir de estas variables se definen operacionalmente los nodos y aristas ponderadas de la matriz de adyacencia.}
+
+\section{Hipótesis}
+\textbf{Formular la hipótesis de trabajo. Las variables operativas identificadas para la hipótesis deben haberse detallado previamente en la sección \ref{sec:dataset}.}
+
+\vspace{0.2cm}
+\noindent \textit{La red de viajes de EcoBici exhibe propiedades de tipo "mundo pequeño" y una estructura comunitaria altamente modular, donde un subconjunto inferior al 15\% de las estaciones concentra más del 40\% del flujo total de intermediación del sistema.}
+
+\section{Objetivos}
+
+\subsection{Objetivo General}
+\textbf{El objetivo general debe ser único en la mayoría de los casos.}
+
+\vspace{0.2cm}
+\noindent \textit{Modelar y evaluar la topología de la red de trayectos de EcoBici para identificar nodos críticos y patrones de conectividad en la movilidad urbana de Buenos Aires.}
+
+\subsection{Objetivos Específicos}
+\textbf{Los objetivos específicos deben presentarse como títulos en negrita acompañados de descripciones cortas en un formato de lista de ítems numerada.}
+
+\begin{enumerate}
+    \item \textit{\textbf{Construcción del grafo de movilidad:} Limpiar y transformar los registros de viajes en un grafo dirigido e interconectado de estaciones.}
+    \item \textit{\textbf{Cálculo de métricas de centralidad:} Evaluar indicadores de grado, intermediación (\textit{betweenness}) y cercanía para priorizar nodos estratégicos.}
+    \item \textit{\textbf{Detección de comunidades:} Aplicar algoritmos de agrupamiento de grafos para identificar zonas urbanas con alta cohesión de viajes.}
+\end{enumerate}
+
+\section{Solución propuesta a desarrollar en el TFI o tesis}
+
+\subsection{Metodología}
+\textbf{Detallar el enfoque metodológico, fases de trabajo y procedimientos de análisis. Las actividades detalladas deben estar en correlato con los objetivos específicos y el cronograma de trabajo propuesto.}
+
+\vspace{0.2cm}
+\noindent \textit{Se implementará un enfoque cuantitativo basado en la teoría de redes complejas. Se procesarán las matrices de origen-destino y se aplicarán algoritmos de análisis topológico.}
+
+\subsection{Técnicas / Herramientas}
+\textbf{Especificar lenguajes, librerías, marcos de trabajo o algoritmos a emplear.}
+
+\vspace{0.2cm}
+\noindent \textit{Se utilizará Python con las librerías \texttt{NetworkX} e \texttt{igraph} para el modelado de grafos, \texttt{Pandas} para manipulación de datos y \texttt{GeoPandas} junto a \texttt{Folium} para visualización espacial.}
+
+\section{Cronograma de actividades}
+\textbf{Presentar una planificación estimada del proyecto mediante una tabla de 4 columnas (Semana, Fechas, Tareas, Entregable). Para las semanas iniciales colocar \textit{En proceso} en los entregables y un entregable concreto al finalizar cada etapa.}
+
+\vspace{0.3cm}
+\begin{center}
+\small
+\begin{tabular}{|c|p{3.2cm}|p{6.4cm}|p{3.2cm}|}
+\hline
+\textbf{Semana} & \textbf{Fechas} & \textbf{Tareas} & \textbf{Entregable} \\ \hline
+1--3 & Desde 31/08/2026 hasta 18/09/2026  & Extracción, ingesta y familiarización con el dataset & En proceso \\ \hline
+4--6 & Desde 21/09/2026 hasta 09/10/2026 & Revisión de literatura sobre redes en transporte & Marco teórico \\ \hline
+7--15 & Desde ... hasta ... & Construcción de matriz de adyacencia y grafo & Código de modelado \\ \hline
+16--25 & Desde ... hasta ...  & Cálculo de métricas de centralidad y comunidades & Reporte de métricas \\ \hline
+26--35 & Desde ... hasta ...  & Validación de hipótesis y visualización espacial & Mapas de red \\ \hline
+36--40 & Desde ... hasta ...  & Redacción de la memoria y preparación de tesis & Tesis finalizada \\ \hline
+\end{tabular}
+\end{center}
+
+\section{Limitaciones}
+\textbf{Detallar las restricciones conceptuales, técnicas, geográficas o temporales del trabajo.}
+
+\vspace{0.2cm}
+\noindent \textit{El análisis se encuentra limitado a los puntos de origen y destino sin disponer de la ruta GPS exacta tomada por el ciclista, además de verse afectado por variaciones estacionales climáticas y días festivos.}
+
+\bibliographystyle{unsrt}
+\bibliography{bibliografia}
+
+\end{document}
