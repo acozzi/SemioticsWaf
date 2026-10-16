@@ -10,6 +10,9 @@
 \usepackage[spanish, es-tabla]{babel}
 \usepackage{csquotes}
 \usepackage{helvet} % Tipografía sans-serif limpia estilo Helvetica/Arial
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{amsmath}
 \renewcommand{\familydefault}{\sfdefault} % Configura el documento en sans-serif
 
 
@@ -139,44 +142,41 @@ Del otro lado, los proveedores de servicios digitales, intentan concientizar a l
 
 En uno de esos niveles se encuentra el cortafuegos de aplicación o \textbf{WAF (Web Application Firewall)}, una tecnología desarrollada en la década de 1990 (vinculada al nacimiento de la World Wide Web en 1993) especializada en analizar el tráfico que solicita llegar a una aplicación web y tomar acciones sobre esas solicitudes, en definitiva bloquearlas o dejarlas llegar.
 
-Los WAF tradicionalmente aplican fórmulas de expresiones regulares (de ahora en más regex) basadas en firmas de ataques conocidos, sobre los requerimientos del cliente, aunque en los últimos años han sumado técnicas más variadas como listas de reputación de ips, bloqueos por geolocalización o detección de bots en base al comportamiento. Este trabajo apunta centralmente a la mejora de ese filtro basándose en firmas de ataques conocidos.
+Los WAF tradicionalmente aplicaron fórmulas de expresiones regulares (de ahora en más regex) basadas en firmas de ataques conocidos sobre los requerimientos del cliente, aunque en los últimos años han sumado técnicas más variadas como listas de reputación de IPs, bloqueos por geolocalización o detección de bots en base al comportamiento. Este trabajo apunta centralmente a la mejora de ese filtro basándose en firmas de ataques conocidos.
 
 Los CVE (Por \textit{Common Vulnerabilities and Exposures}) son esos \textbf{ataques conocidos} mencionados, cada uno de ellos tiene un código de registro utilizado para realizar su seguimiento, el software afectado, formas de mitigación y relación con otros CVEs. A su vez, añade una capa de trazabilidad por lo que cada CVE queda ligado a la publicación de los parches y nuevas reglas de WAF cada vez que surge uno nuevo. En el mismo nombre, radica su debilidad: se trata de reglas y parches relacionados con vulnerabilidades conocidas, asumiendo de facto que antes de su publicación eran desconocidas.
 
 \subsection{Justificación del estudio}
 \label{sec:justificacion-estudio}
 
-Imaginemos un escenario donde un ciberdelincuente logra una forma de penetrar un sistema a partir de una vulnerabilidad del mismo (desconocida hasta el momento). En un lapso de tiempo (que podría durar entre un segundo y varios años) el responsable lo detecta y lo reporta. En ciberseguridad, ese momento se llama \textbf{\textit{zero-day}}, aun cuando la vulnerabilidad pueda haber existido desde tiempo atrás, se trata del día cero para el camino de soluciones posibles a ese problema \cite{nist_zeroday_attack}.
+Imaginemos un escenario donde un cibercriminal logra una forma de penetrar un sistema a partir de una vulnerabilidad del mismo (desconocida hasta el momento). En un lapso de tiempo (que podría durar entre un segundo y varios años) el equipo responsable lo detecta y lo reporta. En ciberseguridad, ese momento se llama \textbf{\textit{zero-day}}, aun cuando la vulnerabilidad pueda haber existido desde tiempo atrás, se trata del día cero para el camino de soluciones posibles a ese problema \cite{nist_zeroday_attack}.
 
-El reporte de esa vulnerabilidad nueva, sería resuelto por una comunidad de colaboradores o por equipos de desarrollo, luego sería liberado el parche y posiblemente una regla de WAF asociada a esa vulnerabilidad. Después, los responsables de otros servicios con el mismo software en todo el mundo, aplicarían la actualización y el sistema volvería a ser seguro.
+El reporte de esa vulnerabilidad nueva, sería resuelto por una comunidad de colaboradores o por equipos de desarrollo, luego sería liberado el parche y posiblemente una regla de WAF asociada a esa vulnerabilidad. Después, los responsables de otros servicios con el mismo software en todo el mundo, aplicarían la actualización y el sistema volvería a ser seguro (respecto a esa vulnerabilidad puntual).
 
-En un mundo ideal, ese proceso completo duraría un par de semanas, en el mundo real de 2025 ese proceso duró una media de 241 días, según el reporte de Cost of Breach que IBM publica cada año\cite{ibm_databreach_2025}. Si bien como demuestra el informe, ese proceso ha mejorado en los últimos años (en parte gracias a los paradigmas de desarrollo ágil y filosofías de CICD) es probable que nunca sea suficiente para cerrar esa ventana temporal de exposición, siguiendo ese pipeline de detección-reporte-actualización.
+En un mundo ideal, ese proceso completo duraría un par de semanas, en el mundo real de 2025 ese proceso duró una media de 241 días, según el reporte de Cost of Breach que IBM publica cada año\cite{ibm_databreach_2025}. Si bien como demuestra el informe, ese proceso ha mejorado en los últimos años (en parte gracias a los paradigmas de desarrollo \textit{agile} y filosofías de CICD como DevOps y sus derivados) es probable que nunca sea suficiente para cerrar esa ventana temporal de exposición, siguiendo un pipeline de detección-reporte-actualización-parcheo.
 
-Este trabajo busca explorar posibles soluciones o reducciones de ese gap, a partir de técnicas y algoritmos de aprendizaje automático, aplicadas en la capa de WAF para detectar solicitudes maliciosas.
+Este trabajo busca \textbf{explorar posibles soluciones o reducciones de esa ventana, a partir de técnicas y algoritmos de aprendizaje automático}, aplicadas en la capa de WAF para detectar solicitudes maliciosas.
 
 Un ejemplo no imaginario fue el caso de un CVE conocido como \enquote{Log4Shell} de 2021 reportado por un empleado de \textit{Ali Baba Cloud} el 24 de noviembre y asumido por \textit{Apache Software Foundation} el 10 de diciembre de ese mismo año. \textit{Akamai}, un productor privado de WAF, publicó parches al día siguiente \cite{akamai2021log4j} y el Instituto Nacional de Estándares y Tecnología (de EEUU, NIST por sus siglas en inglés) en \cite{nvd2021-44228} el 12 de diciembre del mismo año. Como se señala en \cite{hiesgen2022race} la vulnerabilidad existía al menos desde 2016, cuando se publicó el trabajo de \cite{munoz2016jndi} y cuya existencia podría remontarse hasta 2013, año en que se publicó el \textit{commit} que dio origen a la vulnerabilidad \cite{apache2013log4j2commit}. Los primeros parches no fueron suficientes, lo que requirió nuevas versiones publicadas sobre el mismo, hasta el 28 de diciembre de 2021 \cite{nvd2021-44832}.
 
-La vulnerabilidad tuvo notoriedad mundial ya que afectó a plataformas populares como Minecraft, Twitter y Cisco, y su difusión permitió miles de ataques efectivos en los primeros días y cientos de millones de dispositivos afectados \cite{unraveling2025log4shell}. Es difícil establecer una ventana temporal de exposición global para \enquote{Log4Shell}, pero podríamos decir que como mínimo fue de alrededor de un mes, y como máximo, de 5 años.
+La vulnerabilidad tuvo notoriedad mundial ya que afectó a plataformas populares como Minecraft, Twitter y Cisco, y su difusión permitió miles de ataques efectivos en los primeros días y cientos de millones de dispositivos afectados \cite{unraveling2025log4shell}. Es difícil establecer una ventana temporal de exposición global para \enquote{Log4Shell}, pero podríamos decir que como mínimo fue de alrededor de un mes, y como máximo, de 5 años. Según un informe \textit{Zero Days, Thousands of Nights}, publicado por Rand Corporation en 2017 , la esperanza de vida de un zero day ronda los 6.9 años \cite{ablon2017zero}.
 
 Las técnicas aplicadas en \enquote{Log4Shell} no diferían demasiado de los ataques conocidos previamente. Sobre este supuesto, tiene sentido la propuesta de pensar un sistema de aprendizaje automático que trabaje junto a las reglas de WAF pero de forma más flexible que las mismas, basados en el comportamiento continuo de las solicitudes.
 
 \subsection{Alcances del trabajo}
-\textbf{Detallar los límites operacionales y temporales del proyecto (qué abarca concretamente la investigación).}
 
 \vspace{0.2cm}
 Clasificar solicitudes web utilizando técnicas y algoritmos de aprendizaje automático, trabajando junto al WAF, de mínima podría mejorar los ratios de detección e incluso detectar reglas que no se han configurado o no se han actualizado correctamente. De máxima, podría detectar una vulnerabilidad de \textbf{\textit{zero-day}}, antes de la publicación por los organismos de seguimiento y parcheo. No obstante es necesario tener en consideración las limitaciones intrínsecas a la propia propuesta desde lo práctico y lo conceptual.
 
-En principio, el set de datos utilizado, proviene de un entorno controlado \cite{riera2022capec}, desplegado \textit{ad hoc} para investigación y no de un entorno de producción real. Los logs de tráfico web contienen información sensible, valiosa y confidencial que otorga demasiada información sobre el negocio y el desarrollo, por lo cual es esperable que en general no se publiquen.
+En principio, el set de datos utilizado, proviene de un entorno controlado \cite{riera2022srbhdataset_data}, desplegado \textit{ad hoc} para investigación y no de un entorno de producción real. Los logs de tráfico web contienen información sensible, valiosa y confidencial que otorga demasiada información sobre el negocio y el desarrollo, por lo cual es esperable que en general no se publiquen.
 
 Por otro lado, como se explica en el punto \ref{sec:definicion-problema}, actualmente se reconocen cerca de 80 tipos de ataques y es poco probable que un dataset contenga a todos los tipos de ataques y en cantidades medianamente balanceadas. No está de más mencionarlo aunque parezca trivial: los tipos de ataques que no estén en el entrenamiento, tampoco estarán en la predicción. 
 
-Si el insumo de datos principal es un conjunto de datos etiquetados, el proyecto nace con una dependencia externa, que a su vez plantea otras dificultades: el WAF etiquetando produce falsos positivos, los cuales serían tomados como referencia, contaminando el entrenamiento del modelo. Si en su defecto quisiéramos realizar el etiquetado a partir de análisis forense humano, el tiempo y costo de la producción de datos se dispararía, imposibilitando procesos de reentrenamiento automatizado y aun así, sin garantizar la certeza de las etiquetas.
+Si el insumo de datos principal es un conjunto de datos etiquetados, el proyecto nace con una dependencia externa, que a su vez plantea otras dificultades: el WAF etiquetando produce falsos positivos, los cuales serían tomados como referencia, contaminando el entrenamiento del modelo. Si en su defecto quisiéramos realizar el etiquetado a partir de análisis forense humano, el tiempo y costo de la producción de datos se dispararía, imposibilitando procesos de reentrenamiento automatizado y aun así, sin garantizar la certeza de las etiquetas, aunque este dataset en particular sí tuvo una revisión forense posterior (ver \ref{sec:dataset}).
 
-
-En cualquier caso la solución no se propone como un reemplazo al WAF y sus reglas, sino como un complemento adyacente al WAF que pueda ofrecer una solución híbrida para aumentar la seguridad. Quedaría pendiente de analisis la forma técnica en que esa solución podría integrarse de forma eficiente en un WAF para trabajar en conjunto, sin quitarle rendimiento al tráfico. 
+En cualquier caso la solución no se propone como un reemplazo al WAF y sus reglas, sino como un complemento adyacente al WAF que pueda ofrecer una solución híbrida para aumentar la seguridad del asset protegido. Quedaría pendiente de analisis la forma técnica en que esa solución podría integrarse de forma eficiente en un WAF para trabajar en un entorno productivo, sin quitarle rendimiento al tráfico. 
 
 \section{Estado de la cuestión}
-\textbf{Se deben estructurar las subsecciones según temáticas relevantes. Aclarar antecedentes de dominio (investigaciones sobre el problema específico) y antecedentes metodológicos (herramientas, algoritmos o técnicas previas aplicadas al área). Utilizar citas bibliográficas mediante BibTeX.}
 
 Mejorar los niveles de detección de ataques en WAF a partir de los datos, es un problema constante y recurrente dado que la cantidad y creatividad de los ataques se sostiene en el tiempo. Las dinámicas elementales desde el punto de vista técnico para quienes no estén familiarizados con el problema de la seguridad y la acción del WAF son trabajadas en \cite{hassan2026improving} donde se realiza una exploración metodológica acerca de la arquitectura necesaria para detectar y bloquear amenazas de tipo SQLI; si bien menciona los aportes que podrían hacer las técnicas de deep learning en esa capa, no incluye ninguna en su propuesta. Sí aporta algunas nociones metodológicas que podrían ayudar en la etapa de experimentación y, sobre todo, al momento de comparar con los filtros heurísticos.
 
@@ -205,45 +205,146 @@ Ninguno de los trabajos mencionados probó el rendimiento comparado de distintos
 \section{Definición del problema}
 
 \subsection{Problema general}
-\textbf{Describir en detalle la problemática concreta a abordar, sus causas y efectos.}
-
 \label{sec:definicion-problema}
-La seguridad de los activos digitales es un problema a nivel global que dista de poder resolverse de forma taxativa. Hay muchos enfoques al respecto, en este trabajo se toma como referencia el modelo OSI \cite{day1983osi} definido por la organización internacional ISO para la seguridad en las comunicaciones computacionales. Más allá del problema de seguridad global, este trabajo se focalizará en tres problemas dependientes de este, los cuales se intentarán explicar a continuación.
+La seguridad de los activos digitales es un problema a nivel global que dista de poder resolverse de forma taxativa. Hay muchos enfoques al respecto, en este trabajo se toma como referencia el modelo OSI \cite{day1983osi} definido por la organización internacional ISO para la seguridad en las comunicaciones computacionales. Más allá del problema de seguridad global, este trabajo se focalizará en \textbf{tres problemas} dependientes de este, los cuales se intentarán explicar a continuación.
 
-El modelo OSI define 7 capas abstractas de seguridad, una de las cuales, la capa 3 se ocupa de la seguridad de red.
-Es en esa capa donde se colocan los cortafuegos de aplicación, un filtro lógico que media entre una aplicación e internet y se ocupa, entre otras funciones, de definir si una solicitud es legítima o no para proceder a su bloqueo o redireccionamiento hacia el servicio.
+El modelo OSI define 7 capas de comunicación en redes (física, enlace de datos, red, transporte, sesión, presentación y aplicación). La capa de aplicación (o capa 7) es donde operan los cortafuegos de aplicación, un filtro lógico que media entre una aplicación e internet y se ocupa, entre otras funciones, de definir si una solicitud es legítima o no para proceder a su bloqueo o redireccionamiento hacia el servicio.
 
-Esa definición no es sencilla por varios motivos y la definición que se toma no siempre es la correcta. La OWASP Foundation (por sus siglas en inglés Open Web Application Security Project) reconoce 78 distintos tipos de ataques, aunque la cifra está en constante movimiento. Cada uno de ellos no llega al WAF con una etiqueta de \enquote{malicioso} en el encabezado, sino que lo habitual es que se recurra a distintas técnicas de ofuscación para evitar la detección, lo cual constituye el primer problema.
+Esa definición no es sencilla por varios motivos y la acción que se toma no siempre es la correcta. La OWASP Foundation (por sus siglas en inglés Open Web Application Security Project) reconoce 78 distintos tipos de ataques, aunque la cifra está en constante movimiento. Cada uno de ellos no llega al WAF con una etiqueta de \enquote{malicioso} en el encabezado, sino que lo habitual es que se recurra a distintas técnicas de ofuscación para evitar la detección, lo cual constituye el \textbf{primer problema}.
 
 Y esa detección, recurre principalmente a expresiones regulares que buscan patrones dentro de la solicitud que podrían ser signo de un ataque de los mencionados.
 
- OWASP provee de forma abierta cerca de 300 reglas para ese fin a través del programa CRS (Owasp Core Rule Set) que se pueden implementar en cualquier WAF. Owasp desarrolló un WAF de código abierto, llamado ModSecurity (de ahora en más Modsec) al cual se le pueden definir esas reglas, con distintos niveles de paranoia. A mayores niveles de paranoia, más cantidad de falsos positivos, a menor, más posibilidades de bypass\footnote{La misma expresión que se utiliza en medicina, en seguridad se refiere a saltear una regla o un filtro.}, lo cual constituye el segundo problema.
+ OWASP provee de forma abierta cerca de 300 reglas para ese fin a través del programa CRS (Owasp Core Rule Set) que se pueden implementar en cualquier WAF. Owasp desarrolló un WAF de código abierto, llamado ModSecurity (de ahora en más Modsec) al cual se le pueden definir esas reglas, con distintos niveles de paranoia. A mayores niveles de paranoia, más cantidad de falsos positivos, a menor, más posibilidades de bypass\footnote{La misma expresión que se utiliza en medicina, en seguridad se refiere a saltear una regla o un filtro.}, lo cual constituye el \textbf{segundo problema}.
 
-El tercer problema es procedimental: Supongamos que un atacante descubre una vulnerabilidad en un sistema (zero-day), los responsables de ese servicio vulnerado detectan la intrusión, lo reportan, Owasp u otro organismo produce una regla para ese exploit, publican la regla y se reconfigura el WAF con la actualización. Este pipeline produce necesariamente una ventana de oportunidad muy importante como se mencionó en el punto \ref{sec:justificacion-estudio}.
+El \textbf{tercer problema} es procedimental: Supongamos que un atacante explota una vulnerabilidad en un sistema (zero-day), los responsables de ese servicio vulnerado detectan la intrusión y lo reportan. Owasp u otro organismo produce una regla para ese exploit, publican la regla y se reconfigura el WAF con la actualización. Este pipeline produce necesariamente una ventana de oportunidad muy importante como se mencionó en el punto \ref{sec:justificacion-estudio}.
 
 \subsection{Preguntas de investigación}
-\textbf{Formular las preguntas específicas que orientarán la investigación.}
 
 \vspace{0.2cm}
-\noindent \textit{¿Cuáles son las estaciones que actúan como conectores críticos (alta intermediación) en la red EcoBici y cómo se agrupan espacialmente las estaciones formando comunidades de alto tráfico?}
+\noindent \textit{¿Es posible encontrar en una solicitud web pistas sobre las intenciones del solicitante?}
+\noindent \textit{¿Un modelo clasificador debe entrenarse con el tráfico de un servicio en particular o es posible generalizar?}
+\noindent \textit{Existe una similitud semántica entre distintos tipos de ataques o cada uno es particular}
 
 \section{Descripción del set de datos}
 \label{sec:dataset}
 
 \subsection{Origen y contexto del dataset}
-\textbf{Contextualizar explícitamente de dónde proviene el dataset y cómo fue colectado.}
 
 \vspace{0.2cm}
-\noindent \textit{Los datos provienen del portal de datos abiertos del Gobierno de la Ciudad de Buenos Aires (BA Data), conteniendo registros anonimizados recolectados automáticamente por los sensores de cada estación de EcoBici.}
+El set de datos fue publicado junto al paper \cite{sureda2022sr} por Harvard Dataverse. Se trata de un conjunto de solicitudes web capturadas mediante un WAF durante 12 días en julio de 2020. El asset protegido era un sitio falso, con software Wordpress que actuó como honeypot con el único fin de obtener tráfico web.
 
 \subsection{Descripción técnica}
-\textbf{Explicitar las características de las variables e información relevante para el planteamiento de la hipótesis. Esta sección puede incluir gráficas, diagramas u otros recursos descriptivos según corresponda.}
+% Requiere: \usepackage{booktabs}, \usepackage{siunitx} (opcional)
+\subsection{Descripción técnica del dataset SR-BH~2020}
 
-\vspace{0.2cm}
-\noindent \textit{El dataset incluye variables estructuradas como ID de estación de origen/destino, fecha/hora inicio y fin, duración y coordenadas. A partir de estas variables se definen operacionalmente los nodos y aristas ponderadas de la matriz de adyacencia.}
+
+\paragraph{Adquisición.}
+Los datos provienen de tráfico real capturado durante 12 días de julio de 2020
+en un servidor WordPress desplegado en una máquina virtual expuesta a Internet
+(\emph{honeypot}). El servidor tenía instalado ModSecurity~2.9.2 para Apache con
+Core Rule Set (CRS)~3.3.0 en modo \emph{Detection Only}, de modo que todas las
+requests (legítimas y maliciosas) quedaron registradas sin ser bloqueadas.
+Diariamente se recolectaron los logs y la máquina virtual se restauraba a un
+estado limpio. Para proteger los datos personales de los usuarios, todas las
+requests pasaron por un router intermedio, por lo que aparecen originadas en la
+dirección IP local de dicho router.
+
+\paragraph{Etiquetado.}
+Una vez finalizado el período de exposición, los logs se revisaron de forma
+manual y semiautomática (por uno de los autores) para corregir el etiquetado
+normal/ataque realizado por ModSecurity y asegurar una asignación CAPEC
+apropiada. El resultado se almacenó en formato CSV.
+
+\paragraph{Composición.}
+El dataset contiene \num{907814} requests: \num{525195} normales y \num{382619}
+anómalas. Cada registro tiene 24 características y un conjunto de 13 etiquetas.
+La primera etiqueta (\texttt{000 - Normal}) indica si la request es normal; si vale
+1, el resto de las etiquetas debe valer 0. Si vale 0, al menos una de las 12
+etiquetas restantes (categorías CAPEC) vale 1. Como una request puede combinar
+varios ataques, la suma de clasificaciones de la Tabla~\ref{tab:srbh-capec}
+(\num{918176}) supera el número de requests. La mayoría de las requests tiene
+una única clasificación (\num{898576}); \num{8132} tienen dos, \num{1088}
+tienen tres y 18 tienen cuatro.
+
+\begin{table}[t]
+\centering
+\caption{Distribución de requests por clasificación CAPEC en SR-BH~2020.}
+\label{tab:srbh-capec}
+\begin{tabular}{llrr}
+\toprule
+CAPEC & Descripción & Requests & \% del total \\
+\midrule
+000 & Normal                              & 525\,195 & 57.85 \\
+272 & Protocol Manipulation               &   9\,153 &  1.00 \\
+242 & Code Injection                      &  15\,827 &  1.74 \\
+88  & OS Command Injection                &   7\,482 &  0.82 \\
+126 & Path Traversal                      &  20\,992 &  2.31 \\
+66  & SQL Injection                       & 250\,311 & 27.57 \\
+16  & Dictionary-based Password Attack    &   1\,847 &  0.20 \\
+310 & Scanning for Vulnerable Software    &   2\,718 &  0.30 \\
+153 & Input Data Manipulation             &   2\,272 &  0.25 \\
+274 & HTTP Verb Tampering                 &   5\,437 &  0.60 \\
+194 & Fake the Source of Data             &  56\,145 &  6.18 \\
+34  & HTTP Response Splitting             &  19\,738 &  2.17 \\
+33  & HTTP Request Smuggling              &   1\,059 &  0.12 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\paragraph{Codificación numérica de las características.}
+Cada campo de la request se codifica como un valor numérico: se convierte el
+campo a minúsculas y se calcula la media de los valores ASCII de sus caracteres,
+\begin{equation}
+  D(F) =
+  \begin{cases}
+    0 & \text{si } |F| = 0,\\[2pt]
+    \dfrac{1}{|F|}\displaystyle\sum_{i=1}^{|F|} \mathrm{ASCII}\bigl(\mathrm{lower}(c_i)\bigr) & \text{en otro caso,}
+  \end{cases}
+\end{equation}
+donde $F$ es un campo de la request y $c_i$ sus caracteres. Los campos
+codificados incluyen, entre otros, \texttt{method\_value},
+\texttt{http\_request\_value}, \texttt{referer\_value}, \texttt{agent\_value},
+\texttt{cookie\_value}, \texttt{accept\_value}, \texttt{body\_value},
+\texttt{http\_status\_code\_value}, \texttt{http\_status\_message\_value} y
+\texttt{response\_content\_length\_value}. Campos con alta presencia de
+caracteres anómalos (por ejemplo, secuencias \texttt{./../} propias de un
+\emph{path traversal}) producen medias ASCII distintas a las de requests normales.
+
+
+\paragraph{Preprocesamiento y selección de características.}
+Tras la codificación se descartan los campos sin poder discriminante, detectados
+mediante el histograma de cada característica (por ejemplo,
+\texttt{do\_not\_track\_value} toma el mismo valor en todas las requests). Sobre
+los campos restantes se aplica el logaritmo natural, se estandarizan con
+\texttt{StandardScaler} de scikit-learn y se realiza una eliminación recursiva de
+características con validación cruzada (\texttt{RFECV}) usando Random Forest.
+De los 19 campos numéricos analizados por los autores, 9 resultaron
+seleccionados: \texttt{method\_value}, \texttt{http\_request\_value},
+\texttt{referer\_value}, \texttt{agent\_value}, \texttt{cookie\_value},
+\texttt{accept\_value}, \texttt{body\_value}, \texttt{http\_status\_message\_value}
+y \texttt{response\_content\_length\_value}.
+
+
+\paragraph{Uso previsto y particiones.}
+El dataset permite entrenar y evaluar modelos de clasificación multi-etiqueta
+(\emph{Binary Relevance}, \emph{Classifier Chain}, \texttt{MultiOutputClassifier}
+y modelos de una o dos fases). En el trabajo original se empleó una partición
+70/30 entre entrenamiento y validación, y no se aplicó sobremuestreo
+sintético (SMOTE/MLSMOTE), por lo que se utilizan métricas robustas ante el
+desbalance de clases (exactitud \emph{exact-match}, \emph{Hamming loss}, Jaccard,
+F-measure ponderada, ROC~AUC, etc.).
+
+\paragraph{Limitaciones.}
+El dataset está fuertemente desbalanceado (SQL Injection y \emph{Fake the Source
+of Data} concentran la mayoría de los ataques, mientras que, por ejemplo,
+\emph{HTTP Request Smuggling} suma solo \num{1059} requests). Además, todo el
+tráfico proviene de un único servidor WordPress y la revisión del
+etiquetado fue realizada por un solo autor, lo que limita la generalización y
+puede introducir ruido de etiquetas.
 
 \section{Hipótesis}
-\textbf{Formular la hipótesis de trabajo. Las variables operativas identificadas para la hipótesis deben haberse detallado previamente en la sección \ref{sec:dataset}.}
 
 \vspace{0.2cm}
 A partir de un conjunto de líneas de log de WAF con tráfico web, etiquetados con una clasificación de ciberseguridad (normal o malicioso, especificando el tipo de ataque) es posible generar nuevas etiquetas para líneas desconocidas, sin necesidad del filtro heurístico del WAF sino con un algoritmo que determine la naturaleza de la solicitud, realizando un trabajo igual o superior al que realiza un WAF.
