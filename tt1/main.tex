@@ -13,6 +13,9 @@
 \usepackage{booktabs}
 \usepackage{siunitx}
 \usepackage{amsmath}
+\usepackage{array}
+\usepackage{enumitem}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 \renewcommand{\familydefault}{\sfdefault} % Configura el documento en sans-serif
 
 
@@ -214,7 +217,7 @@ Esa definición no es sencilla por varios motivos y la acción que se toma no si
 
 Y esa detección, recurre principalmente a expresiones regulares que buscan patrones dentro de la solicitud que podrían ser signo de un ataque de los mencionados.
 
- OWASP provee de forma abierta cerca de 300 reglas para ese fin a través del programa CRS (Owasp Core Rule Set) que se pueden implementar en cualquier WAF. Owasp desarrolló un WAF de código abierto, llamado ModSecurity (de ahora en más Modsec) al cual se le pueden definir esas reglas, con distintos niveles de paranoia. A mayores niveles de paranoia, más cantidad de falsos positivos, a menor, más posibilidades de bypass\footnote{La misma expresión que se utiliza en medicina, en seguridad se refiere a saltear una regla o un filtro.}, lo cual constituye el \textbf{segundo problema}.
+ OWASP provee de forma abierta cerca de 300 reglas para ese fin a través del programa CRS (Owasp Core Rule Set) que se pueden implementar en cualquier WAF. Owasp desarrolló un WAF de código abierto, llamado ModSecurity (de ahora en más Modsec) al cual se le pueden definir esas reglas, con distintos niveles de paranoia. A mayores niveles de paranoia, más cantidad de falsos positivos, a menor, más posibilidades de bypass, lo cual constituye el \textbf{segundo problema}.
 
 El \textbf{tercer problema} es procedimental: Supongamos que un atacante explota una vulnerabilidad en un sistema (zero-day), los responsables de ese servicio vulnerado detectan la intrusión y lo reportan. Owasp u otro organismo produce una regla para ese exploit, publican la regla y se reconfigura el WAF con la actualización. Este pipeline produce necesariamente una ventana de oportunidad muy importante como se mencionó en el punto \ref{sec:justificacion-estudio}.
 
@@ -224,6 +227,8 @@ El \textbf{tercer problema} es procedimental: Supongamos que un atacante explota
 \noindent \textit{¿Es posible encontrar en una solicitud web pistas sobre las intenciones del solicitante?}
 \noindent \textit{¿Un modelo clasificador debe entrenarse con el tráfico de un servicio en particular o es posible generalizar?}
 \noindent \textit{Existe una similitud semántica entre distintos tipos de ataques o cada uno es particular}
+\noindent \textit{¿Qué modelo transformers aporta los mejores embeddings para este problema?}
+
 
 \section{Descripción del set de datos}
 \label{sec:dataset}
@@ -232,39 +237,16 @@ El \textbf{tercer problema} es procedimental: Supongamos que un atacante explota
 
 \vspace{0.2cm}
 El set de datos fue publicado junto al paper \cite{sureda2022sr} por Harvard Dataverse. Se trata de un conjunto de solicitudes web capturadas mediante un WAF durante 12 días en julio de 2020. El asset protegido era un sitio falso, con software Wordpress que actuó como honeypot con el único fin de obtener tráfico web.
+El WAF utilizado fue ModSec 2.9.2 con CRS 3.3.0 en modo \emph{Detection Only}, es decir las detecciones no fueron bloqueadas, lo cual contribuyó al desbalance entre passed vs blocked.
+
+Luego de la recolección, las etiquetas fueron revisadas \enquote{manualmente} y almacenado en csv.
 
 \subsection{Descripción técnica}
-% Requiere: \usepackage{booktabs}, \usepackage{siunitx} (opcional)
-\subsection{Descripción técnica del dataset SR-BH~2020}
 
 
-\paragraph{Adquisición.}
-Los datos provienen de tráfico real capturado durante 12 días de julio de 2020
-en un servidor WordPress desplegado en una máquina virtual expuesta a Internet
-(\emph{honeypot}). El servidor tenía instalado ModSecurity~2.9.2 para Apache con
-Core Rule Set (CRS)~3.3.0 en modo \emph{Detection Only}, de modo que todas las
-requests (legítimas y maliciosas) quedaron registradas sin ser bloqueadas.
-Diariamente se recolectaron los logs y la máquina virtual se restauraba a un
-estado limpio. Para proteger los datos personales de los usuarios, todas las
-requests pasaron por un router intermedio, por lo que aparecen originadas en la
-dirección IP local de dicho router.
-
-\paragraph{Etiquetado.}
-Una vez finalizado el período de exposición, los logs se revisaron de forma
-manual y semiautomática (por uno de los autores) para corregir el etiquetado
-normal/ataque realizado por ModSecurity y asegurar una asignación CAPEC
-apropiada. El resultado se almacenó en formato CSV.
-
-\paragraph{Composición.}
-El dataset contiene \num{907814} requests: \num{525195} normales y \num{382619}
-anómalas. Cada registro tiene 24 características y un conjunto de 13 etiquetas.
-La primera etiqueta (\texttt{000 - Normal}) indica si la request es normal; si vale
-1, el resto de las etiquetas debe valer 0. Si vale 0, al menos una de las 12
-etiquetas restantes (categorías CAPEC) vale 1. Como una request puede combinar
-varios ataques, la suma de clasificaciones de la Tabla~\ref{tab:srbh-capec}
-(\num{918176}) supera el número de requests. La mayoría de las requests tiene
-una única clasificación (\num{898576}); \num{8132} tienen dos, \num{1088}
-tienen tres y 18 tienen cuatro.
+El dataset contiene 907.814 requests: 525.195 normales y 382.619
+anómalas. Cada registro tiene 24 columnas propias del WAF (como puertos, url, timestamp, etc) y un conjunto de 13 etiquetas de detección.
+La primera etiqueta (000 - Normal) indica si la request es una solicitud legítima; si vale 1, el resto de las etiquetas debe valer 0. Si vale 0, al menos una de las 12 etiquetas restantes vale 1. Como una request puede combinar varios ataques, la suma de clasificaciones de la Tabla~\ref{tab:srbh-capec} (918.176) supera el número de requests. La mayoría de las requests tiene una única clasificación 898.576, 8.132 tienen dos, 1.088 tienen tres y 18 tienen cuatro.
 
 \begin{table}[t]
 \centering
@@ -291,58 +273,7 @@ CAPEC & Descripción & Requests & \% del total \\
 \end{tabular}
 \end{table}
 
-
-
-\paragraph{Codificación numérica de las características.}
-Cada campo de la request se codifica como un valor numérico: se convierte el
-campo a minúsculas y se calcula la media de los valores ASCII de sus caracteres,
-\begin{equation}
-  D(F) =
-  \begin{cases}
-    0 & \text{si } |F| = 0,\\[2pt]
-    \dfrac{1}{|F|}\displaystyle\sum_{i=1}^{|F|} \mathrm{ASCII}\bigl(\mathrm{lower}(c_i)\bigr) & \text{en otro caso,}
-  \end{cases}
-\end{equation}
-donde $F$ es un campo de la request y $c_i$ sus caracteres. Los campos
-codificados incluyen, entre otros, \texttt{method\_value},
-\texttt{http\_request\_value}, \texttt{referer\_value}, \texttt{agent\_value},
-\texttt{cookie\_value}, \texttt{accept\_value}, \texttt{body\_value},
-\texttt{http\_status\_code\_value}, \texttt{http\_status\_message\_value} y
-\texttt{response\_content\_length\_value}. Campos con alta presencia de
-caracteres anómalos (por ejemplo, secuencias \texttt{./../} propias de un
-\emph{path traversal}) producen medias ASCII distintas a las de requests normales.
-
-
-\paragraph{Preprocesamiento y selección de características.}
-Tras la codificación se descartan los campos sin poder discriminante, detectados
-mediante el histograma de cada característica (por ejemplo,
-\texttt{do\_not\_track\_value} toma el mismo valor en todas las requests). Sobre
-los campos restantes se aplica el logaritmo natural, se estandarizan con
-\texttt{StandardScaler} de scikit-learn y se realiza una eliminación recursiva de
-características con validación cruzada (\texttt{RFECV}) usando Random Forest.
-De los 19 campos numéricos analizados por los autores, 9 resultaron
-seleccionados: \texttt{method\_value}, \texttt{http\_request\_value},
-\texttt{referer\_value}, \texttt{agent\_value}, \texttt{cookie\_value},
-\texttt{accept\_value}, \texttt{body\_value}, \texttt{http\_status\_message\_value}
-y \texttt{response\_content\_length\_value}.
-
-
-\paragraph{Uso previsto y particiones.}
-El dataset permite entrenar y evaluar modelos de clasificación multi-etiqueta
-(\emph{Binary Relevance}, \emph{Classifier Chain}, \texttt{MultiOutputClassifier}
-y modelos de una o dos fases). En el trabajo original se empleó una partición
-70/30 entre entrenamiento y validación, y no se aplicó sobremuestreo
-sintético (SMOTE/MLSMOTE), por lo que se utilizan métricas robustas ante el
-desbalance de clases (exactitud \emph{exact-match}, \emph{Hamming loss}, Jaccard,
-F-measure ponderada, ROC~AUC, etc.).
-
-\paragraph{Limitaciones.}
-El dataset está fuertemente desbalanceado (SQL Injection y \emph{Fake the Source
-of Data} concentran la mayoría de los ataques, mientras que, por ejemplo,
-\emph{HTTP Request Smuggling} suma solo \num{1059} requests). Además, todo el
-tráfico proviene de un único servidor WordPress y la revisión del
-etiquetado fue realizada por un solo autor, lo que limita la generalización y
-puede introducir ruido de etiquetas.
+Está fuertemente desbalanceado (SQL Injection y en menor medida \textit{Fake the Source of Data} concentran la mayoría de los ataques, mientras que, por ejemplo, \textit{HTTP Request Smuggling} suma solo 1059 requests).
 
 \section{Hipótesis}
 
@@ -358,52 +289,125 @@ A partir de un conjunto de líneas de log de WAF con tráfico web, etiquetados c
 \noindent \textit{Clasificar correctamente un conjunto de líneas de log asociadas a tráfico web normal o malicioso, con un ratio igual o superior al que realiza actualmente un WAF.}
 
 \subsection{Objetivos Específicos}
-\textbf{Los objetivos específicos deben presentarse como títulos en negrita acompañados de descripciones cortas en un formato de lista de ítems numerada.}
 
 \begin{enumerate}
-    \item \textit{\textbf{Construcción del grafo de movilidad:} Limpiar y transformar los registros de viajes en un grafo dirigido e interconectado de estaciones.}
-    \item \textit{\textbf{Cálculo de métricas de centralidad:} Evaluar indicadores de grado, intermediación (\textit{betweenness}) y cercanía para priorizar nodos estratégicos.}
-    \item \textit{\textbf{Detección de comunidades:} Aplicar algoritmos de agrupamiento de grafos para identificar zonas urbanas con alta cohesión de viajes.}
+    \item \textit{\textbf{Interpretación Semántica:} Extraer de cada línea de log, las características semánticas particulares que nos aporten información sobre la intencionalidad de la solicitud.}
+    \item \textit{\textbf{Feature Engineering:} Identificar las características de la línea que más peso tienen dentro de la definición de la etiqueta.}
+    \item \textit{\textbf{Entrenamiento:} Entrenar un modelo clasificador que identifique el o los tipos concretos de ataques en la solicitud.}
+    \item \textit{\textbf{DevOps:} Generar un pipeline eficiente que permita procesar solicitudes en menos de 3 segundos.}
 \end{enumerate}
 
 \section{Solución propuesta a desarrollar en el TFI o tesis}
+Propongo desarrollar un modelo de aprendizaje automático supervisado que logre interpretar semánticamente las solicitudes web que llegan a un WAF y, en base a esa interpretación, clasificarlas entre los distintos tipos de ataques posibles o solicitud legítima.
+
+Para ello, partiendo de un set de datos previamente clasificado, extraer embeddings de ciertos campos a partir de modelos transformers, extraer características con distintas técnicas de ingeniería y con esa información, entrenar un modelo con un algoritmo clasificador, que pueda hacer esa clasificación sobre datos sin clasificar.
+
+La falta de especificidad del modelo transformers y el algoritmo clasificador se debe a que probaré con distintas combinaciones de ensamble para evaluar los rendimientos de cada combinación.
 
 \subsection{Metodología}
 \label{sec:metodologia}
-\textbf{Detallar el enfoque metodológico, fases de trabajo y procedimientos de análisis. Las actividades detalladas deben estar en correlato con los objetivos específicos y el cronograma de trabajo propuesto.}
 
-\vspace{0.2cm}
-\noindent \textit{Se implementará un enfoque cuantitativo basado en la teoría de redes complejas. Se procesarán las matrices de origen-destino y se aplicarán algoritmos de análisis topológico.}
+Se espera lograr un pipeline de datos que permita la experimentación y prueba de distintos modelos y librerías. Para el entorno global se utilizará Kubernetes como infraestructura de soporte, que provea contenedores necesarios para las tareas basados en la filosofía DevOps. 
+
+\subsubsection{Ingesta}
+El software de soporte inicial sería una base de datos Postgres (dentro de un contenedor) que podría usar psql para ingestar u otro contenedor con Python y SQLAlchemy para la interacción.
+
+Por la misma naturaleza de las líneas de log (muchas con caracteres especiales y binarios) es necesario insertar línea por línea con una codificación amplia como \enquote{latin-1} con un control flexible de errores. Ello no implica descartar ninguna línea (ya que justamente un outlier en este caso podría ser la clave de un ataque) sino por el contrario, garantizando que todas las líneas lleguen a la tabla.
+
+El producto de esta primer etapa debería ser una tabla Postgres que contenga un id (construido a partir de un hash md5 de cada línea), la línea en cuestión como string y su/s label/s como string o vector de strings.
+
+
+\subsubsection{Limpieza y parseo}
+Esta etapa es compleja por varios motivos y las decisiones que se tomen en ésta pueden cambiar de raíz los resultados finales. En principio no se puede realizar una normalización como se haría con otros sets de datos, ya que eliminar caracteres especiales o aplanar el case (llevar todo a mayúsculas o a minúsculas), nos haría perder información elemental para nuestro objetivo.
+
+Por otro lado, la presencia, dentro del propio contenido de los datos, de símbolos que habitualmente se emplean como separadores de campos incrementa la complejidad del proceso de parseo. Caracteres como la coma (\texttt{,}), el punto y coma (\texttt{;}), el numeral (\texttt{\#}) o incluso caracteres de control como el salto de línea (\texttt{\textbackslash n}), el retorno de carro (\texttt{\textbackslash r}) y la tabulación (\texttt{\textbackslash t}) son utilizados con frecuencia por los atacantes para alterar el comportamiento esperado de los mecanismos de procesamiento de datos. Incluso una solicitud legítima puede contener comas (\texttt{,}) y eso rompería la estructura de un CSV.
+
+En consecuencia, es necesario analizar individualmente cada conjunto de datos para identificar con precisión la posición de cada variable y asignarla correctamente a los campos de la estructura tabular que serán utilizados en las etapas posteriores del procesamiento.
+
+\subsubsection{Selección de variables e ingeniería de características}
+Se debería realizar un concatenado del método más el cuerpo de la solicitud (body) que incluiría la uri, el payload y el user-agent. Estos elementos están en discusión y la definición requiere un análisis más profundo sobre el dataset en particular.
+Para la ingeniería de características se podrían hacer varios cálculos sobre la línea en sí, incluyendo: entropía de Shannon, puerto destino, cantidad de caracteres especiales, cantidad de palabras clave, ratio de caracteres especiales sobre el total, largo de la línea, etc.
+
+\subsubsection{Extracción de embeddings}
+Sobre las variables seleccionadas y concatenadas, debería realizarse la extracción de embeddings, a partir de distintas librerías de transformers para probar cuál aporta mejores resultados. En este punto es necesario tomar otra decisión metodológica, relacionada al largo de la línea a tomar: si truncar los resultados sobre el largo de la mayoría y perder parte de los datos (usando un percentil de largo de 95 por ejemplo) o utilizar el máximo perjudicando la velocidad y el consumo de recursos. Entre las librerías que se podrían considerar se encuentran: SecBERT y SecRoBERTa \cite{jackaduma2022secbert}, DeBERTa \cite{he2021deberta},
+RoBERTa \cite{liu2019roberta}, SecureBERT \cite{aghaei2023securebert},
+CANINE \cite{clark2022canine} y DistilRoBERTa \cite{sanh2019distilbert}, aunque la idea no es probar todas.
+En este punto no tendría sentido mantener los datos en el motor SQL; debería exportarse a un archivo que puedan consumir los algoritmos de entrenamiento como podría ser parquet o archivos de matrices.
+
+\subsubsection{Entrenamiento}
+Con los datos exportados, probar el entrenamiento con distintos algoritmos de clasificación: variantes de \textit{gradient boosting} —LightGBM \cite{ke2017lightgbm}, XGBoost \cite{chen2016xgboost} y CatBoost
+\cite{prokhorenkova2018catboost}—, Support Vector Machine \cite{cortes1995svm} y PyTorch \cite{paszke2019pytorch}, variando hiperparámetros, porcentajes de entrenamiento y pruebas sobre el dataset.
+
+\subsubsection{Prueba, pruebas cruzadas y recolección de métricas}
+El modelo entrenado, además de probarse con los datos que se apartaron para pruebas del mismo dataset, podrían testearse  de forma cruzada con datos de otro dataset para ver la flexibilidad del modelo.
 
 \subsection{Técnicas / Herramientas}
-\textbf{Especificar lenguajes, librerías, marcos de trabajo o algoritmos a emplear.}
 
-\vspace{0.2cm}
-\noindent \textit{Se utilizará Python con las librerías \texttt{NetworkX} e \texttt{igraph} para el modelado de grafos, \texttt{Pandas} para manipulación de datos y \texttt{GeoPandas} junto a \texttt{Folium} para visualización espacial.}
+A continuación se detallan varias de las tecnologías, librerías y algoritmos concretos que se emplearán para ejecutar cada una de las etapas descritas en el punto \ref{sec:metodologia}. Es probable que en la etapa de experimentación algunas se reemplacen o se añadan otras.
+
+\subsubsection{Infraestructura:} Kubernetes como orquestador de contenedores para las distintas etapas del pipeline, y PostgreSQL como motor de base de datos para la ingesta inicial de los logs. Para orquestar y ejecutar las pruebas cross entre transformers y clasificadores, Apache Airflow conectado a Kubernetes con KPO (Kubernetes Pod Operator) para que cada tarea construya su propio contenedor aislado y efímero.
+
+\subsubsection{Procesamiento y limpieza de datos:} Python como lenguaje principal, junto con las librerías pandas y NumPy para la manipulación tabular, el tratamiento de valores nulos y la concatenación de campos.
+
+\subsubsection{Extracción de embeddings:} HuggingFace Transformers (\texttt{AutoTokenizer}, \texttt{AutoModel}) sobre modelos preentrenados de dominio como SecBERT \cite{jackaduma2022secbert} entre otros, con PyTorch \cite{paszke2019pytorch} como backend de inferencia (con soporte GPU/CPU). La tokenización se realiza con truncamiento y padding a un largo fijo (aún no determinado).
+
+\subsubsection{Manejo de datos a gran escala:} Como el entorno de desarrollo está pensado para una laptop personal (con GPU incorporada) es necesario realizar checkpointing de los embeddings por lote en el disco (formato \texttt{.npy}) para tolerar mejor los fallos y reanudar procesos que mata el Sistema Operativo. La escritura en formato Parquet (vía PyArrow) para evitar la acumulación de metadata en memoria y si es necesario, en forma de streaming o chunks pequeños.
+
+\subsubsection{Entrenamiento y clasificación:} scikit-learn para la partición de datos (\texttt{train-test-split}), la binarización de etiquetas multi-clase y el cálculo de métricas; LightGBM como algoritmo de clasificación, además de los otros mencionados.
+
+\subsubsection{Evaluación:} Métricas de precisión, recall, f1-score y soporte por clase, junto con promedios micro, macro, ponderado y por muestra, estos últimos particularmente relevantes dado el fuerte desbalance entre clases del dataset.
+
 
 \section{Cronograma de actividades}
-\textbf{Presentar una planificación estimada del proyecto mediante una tabla de 4 columnas (Semana, Fechas, Tareas, Entregable). Para las semanas iniciales colocar \textit{En proceso} en los entregables y un entregable concreto al finalizar cada etapa.}
 
 \vspace{0.3cm}
 \begin{center}
 \small
-\begin{tabular}{|c|p{3.2cm}|p{6.4cm}|p{3.2cm}|}
+\renewcommand{\arraystretch}{1.3}
+
+\begin{tabular}{|c|L{3.2cm}|L{6.2cm}|L{3.2cm}|}
 \hline
 \textbf{Semana} & \textbf{Fechas} & \textbf{Tareas} & \textbf{Entregable} \\ \hline
-1--3 & Desde 31/08/2026 hasta 18/09/2026  & Extracción, ingesta y familiarización con el dataset & En proceso \\ \hline
-4--6 & Desde 21/09/2026 hasta 09/10/2026 & Revisión de literatura sobre redes en transporte & Marco teórico \\ \hline
-7--15 & Desde ... hasta ... & Construcción de matriz de adyacencia y grafo & Código de modelado \\ \hline
-16--25 & Desde ... hasta ...  & Cálculo de métricas de centralidad y comunidades & Reporte de métricas \\ \hline
-26--35 & Desde ... hasta ...  & Validación de hipótesis y visualización espacial & Mapas de red \\ \hline
-36--40 & Desde ... hasta ...  & Redacción de la memoria y preparación de tesis & Tesis finalizada \\ \hline
+
+7--13 & Desde 12/10/2026 hasta 27/11/2026 &
+\begin{itemize}[nosep,leftmargin=*,topsep=2pt]
+  \item Armado de la infraestructura
+  \item Ingesta y parseo inicial para experimentar
+\end{itemize} & Infraestructura y parser de ingesta \\ \hline
+
+14--22 & Desde 30/11/2026 hasta 29/01/2027 &
+\begin{itemize}[nosep,leftmargin=*,topsep=2pt]
+  \item MVP: prueba de un pipeline completo desde la ingesta hasta la publicación de resultados
+  \item Procurar el uso de arquitectura efímera que permita la experimentación
+\end{itemize} &
+MVP del pipeline completo \\ \hline
+
+23--26 & Desde 01/02/2027 hasta 26/02/2027 &
+\begin{itemize}[nosep,leftmargin=*,topsep=2pt]
+  \item Primera quincena: vacaciones
+  \item Segunda quincena: resolver la presentación en la conferencia
+\end{itemize} &
+Presentación en la conferencia \\ \hline
+
+27--30 & Desde 01/03/2027 hasta 26/03/2027 &
+\begin{itemize}[nosep,leftmargin=*,topsep=2pt]
+  \item Obtener resultados con todas las combinaciones
+  \item Avanzar en la escritura de conclusiones sobre los experimentos
+\end{itemize} &
+Resultados completos y borrador de conclusiones \\ \hline
+
+31--35 & Desde 29/03/2027 hasta 30/04/2027 &
+\begin{itemize}[nosep,leftmargin=*,topsep=2pt]
+  \item Primera quincena: vacaciones
+  \item Nuevo estado de la cuestión en base a las últimas publicaciones
+  \item Cierre del texto de tesis
+\end{itemize} &
+Tesis finalizada \\ \hline
 \end{tabular}
 \end{center}
 
 \section{Limitaciones}
-\textbf{Detallar las restricciones conceptuales, técnicas, geográficas o temporales del trabajo.}
 
-\vspace{0.2cm}
-\noindent \textit{El análisis se encuentra limitado a los puntos de origen y destino sin disponer de la ruta GPS exacta tomada por el ciclista, además de verse afectado por variaciones estacionales climáticas y días festivos.}
 
 \bibliographystyle{unsrt}
 \bibliography{bibliografia}
