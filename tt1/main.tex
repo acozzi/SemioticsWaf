@@ -59,7 +59,7 @@
     linkcolor=itbablue,
     citecolor=itbablue,
     urlcolor=itbablue,
-    pdfauthor={Apellido/s, Nombre/s},
+    pdfauthor={Cozzi, Alejandro},
     pdftitle={Interpretación semántica de solicitudes web en capa de aplicación -- ITBA}
 }
 
@@ -120,7 +120,7 @@
     % Pie de la carátula centrado
     \begin{center}
         {\large \textbf{BUENOS AIRES}} \\[0.2cm]
-        {\large \textbf{PRIMER / SEGUNDO CUATRIMESTRE, 2026}}
+        {\large \textbf{SEGUNDO CUATRIMESTRE, 2026}}
     \end{center}
     \vspace*{0.3cm}
 \end{titlepage}
@@ -162,7 +162,7 @@ Este trabajo busca \textbf{explorar posibles soluciones o reducciones de esa ven
 
 Un ejemplo no imaginario fue el caso de un CVE conocido como \enquote{Log4Shell} de 2021 reportado por un empleado de \textit{Ali Baba Cloud} el 24 de noviembre y asumido por \textit{Apache Software Foundation} el 10 de diciembre de ese mismo año. \textit{Akamai}, un productor privado de WAF, publicó parches al día siguiente \cite{akamai2021log4j} y el Instituto Nacional de Estándares y Tecnología (de EEUU, NIST por sus siglas en inglés) en \cite{nvd2021-44228} el 12 de diciembre del mismo año. Como se señala en \cite{hiesgen2022race} la vulnerabilidad existía al menos desde 2016, cuando se publicó el trabajo de \cite{munoz2016jndi} y cuya existencia podría remontarse hasta 2013, año en que se publicó el \textit{commit} que dio origen a la vulnerabilidad \cite{apache2013log4j2commit}. Los primeros parches no fueron suficientes, lo que requirió nuevas versiones publicadas sobre el mismo, hasta el 28 de diciembre de 2021 \cite{nvd2021-44832}.
 
-La vulnerabilidad tuvo notoriedad mundial ya que afectó a plataformas populares como Minecraft, Twitter y Cisco, y su difusión permitió miles de ataques efectivos en los primeros días y cientos de millones de dispositivos afectados \cite{unraveling2025log4shell}. Es difícil establecer una ventana temporal de exposición global para \enquote{Log4Shell}, pero podríamos decir que como mínimo fue de alrededor de un mes, y como máximo, de 5 años. Según un informe \textit{Zero Days, Thousands of Nights}, publicado por Rand Corporation en 2017 , la esperanza de vida de un zero day ronda los 6.9 años \cite{ablon2017zero}.
+La vulnerabilidad tuvo notoriedad mundial ya que afectó a plataformas populares como Minecraft, Twitter y Cisco, y su difusión permitió miles de ataques efectivos en los primeros días y cientos de millones de dispositivos afectados \cite{unraveling2025log4shell}. Es difícil establecer una ventana temporal de exposición global para \enquote{Log4Shell}, pero podríamos decir que como mínimo fue de alrededor de un mes, y como máximo, de 8 años. Según un informe \textit{Zero Days, Thousands of Nights}, publicado por Rand Corporation en 2017 , la esperanza de vida de un zero day ronda los 6.9 años \cite{ablon2017zero}.
 
 Las técnicas aplicadas en \enquote{Log4Shell} no diferían demasiado de los ataques conocidos previamente. Sobre este supuesto, tiene sentido la propuesta de pensar un sistema de aprendizaje automático que trabaje junto a las reglas de WAF pero de forma más flexible que las mismas, basados en el comportamiento continuo de las solicitudes.
 
@@ -283,7 +283,6 @@ A partir de un conjunto de líneas de log de WAF con tráfico web, etiquetados c
 \section{Objetivos}
 
 \subsection{Objetivo General}
-\textbf{El objetivo general debe ser único en la mayoría de los casos.}
 
 \vspace{0.2cm}
 \noindent \textit{Clasificar correctamente un conjunto de líneas de log asociadas a tráfico web normal o malicioso, con un ratio igual o superior al que realiza actualmente un WAF.}
@@ -408,6 +407,19 @@ Tesis finalizada \\ \hline
 
 \section{Limitaciones}
 
+\subsection{Origen del dataset}
+
+Como se mencionó en \ref{sec:dataset}, los datos no son de un entorno productivo real, sino de un entorno controlado desplegado \textit{ad hoc} como honeypot con fines de investigación. Por este motivo, la distribución y la variedad del tráfico pueden diferir de las de una aplicación real. Además, el dataset abarca 12 clasificaciones de ataque frente a las cerca de 80 que se reconocen actualmente, y su distribución está fuertemente desbalanceada. Los tipos de ataque ausentes en el entrenamiento probablemente tampoco estarán presentes en la predicción, y el desempeño sobre las clases minoritarias tendrá una estimación menos confiable.
+
+\subsection{Dependencia de las etiquetas}
+
+Las etiquetas fueron generadas originalmente por ModSecurity 2.9.2 con CRS 3.3.0 en modo \textit{Detection Only} y revisadas manualmente con posterioridad (ver \ref{sec:dataset}). Esto introduce dos limitaciones. Por un lado, las etiquetas no constituyen una verdad absoluta: los falsos positivos del WAF que la revisión no corrigió son tomados como referencia y podrían contaminar el entrenamiento, y los ataques que el WAF no detectó y que la revisión no advirtió figuran en principio como tráfico legítimo. Si bien con el doble chequeo el conjunto debería ser mayormente confiable, la estrategia es difícilmente escalable o reproducible en un ciclo de MLOps.
+
+
+
+\subsection{Rendimiento e integración en producción}
+
+La solución no se propone como un reemplazo del WAF y sus reglas, sino como un complemento adyacente que ofrezca una solución híbrida. Queda pendiente de análisis la forma técnica de integrarla de manera eficiente en un WAF que opere en producción sin degradar el rendimiento del tráfico. Además, el objetivo de procesar solicitudes en menos de 3 segundos se evaluará en un entorno de desarrollo basado en una laptop personal, por lo que los tiempos obtenidos no serán comparables directamente a un entorno productivo con volúmenes y exigencias de latencia reales, aunque con la tecnología actual, podría resolverse con escalamiento.
 
 \bibliographystyle{unsrt}
 \bibliography{bibliografia}
